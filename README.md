@@ -34,13 +34,34 @@ docker build -t zhijian-api .
 
 | 变量 | 说明 |
 | --- | --- |
-| `MYSQL_HOST` | MySQL 内网地址 |
-| `MYSQL_PORT` | 默认 `3306` |
-| `MYSQL_USER` | 专用数据库用户 |
+| `MYSQL_HOST` | `10.23.101.57`，须与云托管服务网络互通 |
+| `MYSQL_PORT` | `3306` |
+| `MYSQL_USER` | 当前配置为 `root` |
 | `MYSQL_PASSWORD` | 数据库密码 |
-| `MYSQL_DATABASE` | 已创建的数据库名 |
+| `MYSQL_DATABASE` | `nodejs_demo` |
 | `ADMIN_TOKEN` | 至少 32 字符的随机管理令牌 |
 | `ALLOWED_ORIGIN` | 可选，独立 H5 客户端的精确来源 |
+
+完整生产模板见 `.env.production.example`。不要上传填写了密码的 `.env` 或 `.env.production`。`npm start` 只自动读取本地 `.env`；云托管直接使用控制台注入的环境变量。
+
+### GitHub 安全配置与检查
+
+仓库的 **Settings → Secrets and variables → Actions** 保存以下配置：
+
+- Secrets：`MYSQL_PASSWORD`、`ADMIN_TOKEN`。
+- Variables：`MYSQL_HOST`、`MYSQL_PORT`、`MYSQL_USER`、`MYSQL_DATABASE`、`MYSQL_EXTERNAL_HOST`、`MYSQL_EXTERNAL_PORT`。
+
+内网变量用于记录生产连接配置；外网变量用于 GitHub 托管运行器的只读连接检查。GitHub Secrets 不会自动注入微信云托管，也不会打包到镜像中；部署时必须在云托管控制台填写对应运行环境变量。
+
+每次推送 `main` 或提交 PR，GitHub Actions 会运行后端测试并构建 Docker 镜像。可以在 **Actions → Backend checks → Run workflow** 勾选 `check_database`，验证数据库登录与只读查询；该检查不会建表或写入内容。
+
+本地已填写数据库配置后，也可以运行：
+
+```sh
+npm run db:check
+```
+
+外网访问需允许执行检查的机器访问数据库；云托管服务使用内网地址需要网络互通。
 
 生产环境必须配置 MySQL，禁止使用容器本地文件持久化。数据库账号需要在指定库创建、读取和更新 `portfolio_content` 表的权限。初次启动会插入演示内容，后续启动不会覆盖已有内容；正式内容请将 `isDemo` 改为 `false`。
 
@@ -63,4 +84,4 @@ AppID 是公开标识。当前内容 API 不调用需要 AppSecret 或上传私�
 
 ## 验证范围
 
-`npm test` 覆盖内容读取、鉴权、校验、并发冲突、文件持久化，以及生产环境禁止本地文件存储。Docker 镜像构建、真实 MySQL、云托管部署和微信真机调用需要在对应环境进一步验证。上传源码不等同于完成服务部署或小程序发布。
+`npm test` 覆盖内容读取、鉴权、校验、并发冲突、文件持久化，以及生产环境禁止本地文件存储。`npm run db:check` 验证真实 MySQL 登录及只读查询，不验证建表和写入权限。Docker 构建由 GitHub Actions 检查；云托管部署、内网连接及微信真机调用需要在对应环境进一步验证。上传源码不等同于完成服务部署或小程序发布。

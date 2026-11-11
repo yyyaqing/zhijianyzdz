@@ -1,0 +1,48 @@
+name: Backend checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      check_database:
+        description: Run a read-only check against the configured external database
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm test
+      - run: docker build -t zhijian-api:check .
+
+  database-check:
+    if: github.event_name == 'workflow_dispatch' && inputs.check_database
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Check database without writing data
+        run: npm run db:check
+        env:
+          MYSQL_HOST: ${{ vars.MYSQL_EXTERNAL_HOST }}
+          MYSQL_PORT: ${{ vars.MYSQL_EXTERNAL_PORT }}
+          MYSQL_USER: ${{ vars.MYSQL_USER }}
+          MYSQL_DATABASE: ${{ vars.MYSQL_DATABASE }}
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}

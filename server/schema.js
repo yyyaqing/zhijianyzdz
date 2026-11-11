@@ -1,6 +1,6 @@
 import { z } from 'zod'
 const text = z.string().max(10000)
-const media = z.string().max(2048).refine(value => /^https:\/\/[^\s]+$/.test(value) || /^\/static\/images\/[\w.-]+$/.test(value), '媒体必须使用 HTTPS 或内置图片路径')
+const media = z.string().max(2048).refine(value => /^https:\/\/[^\s]+$/.test(value) || /^\/api\/media\/[a-f0-9-]{36}$/.test(value) || /^\/static\/images\/[\w.-]+$/.test(value), '媒体必须使用 HTTPS 或内置图片路径')
 const identifier = z.string().regex(/^[a-zA-Z0-9_-]{1,80}$/)
 const step = z.object({ id: identifier, title: text, text, type: z.enum(['image', 'video']), src: media, poster: z.union([media, z.literal('')]).optional() }).strict()
 export const contentSchema = z.object({

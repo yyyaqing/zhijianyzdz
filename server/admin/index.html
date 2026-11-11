@@ -1,0 +1,10 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>纸间营造 · 内容管理</title><link rel="stylesheet" href="/admin/style.css"><script src="/admin/admin.js" defer></script></head>
+<body>
+<section id="login" class="login" hidden><div class="login-brand">纸间营造<span>大曾</span></div><form id="login-form"><p class="eyebrow">CONTENT MANAGEMENT</p><h1>内容管理后台</h1><p class="muted">编辑页面与详情，让每一次更新清晰可见。</p><label>管理口令<input id="token" type="password" required autocomplete="current-password" placeholder="请输入云托管 ADMIN_TOKEN"></label><button class="primary" type="submit">登录后台 →</button><p id="login-error" role="alert"></p><p class="hint">使用云托管环境变量 ADMIN_TOKEN 的值登录。</p></form></section>
+<div id="workspace" hidden>
+<aside><a class="brand" href="/admin/">纸间营造<span>大曾 / 内容管理</span></a><nav aria-label="内容导航"><button data-section="studio">工作室 <small>studio</small></button><button data-section="slides">轮播与二维码 <small>media</small></button><button data-section="projects">作品管理 <small>work</small></button><button data-section="research">研究管理 <small>research</small></button></nav><div class="aside-foot"><p>页面 · 列表 · 详情<br>在一个地方维护。</p><button id="logout">退出登录 ↗</button></div></aside>
+<main><header><div><p class="eyebrow">纸间营造 / 内容管理</p><h1 id="page-title">工作室</h1></div><div class="save-tools"><span id="save-state" role="status">正在读取…</span><button id="reload">重新读取</button><button id="save" class="primary" disabled>保存并发布</button></div></header><div id="notice" role="alert" hidden></div><div class="page-note">保存后更新小程序内容。修改会暂存在当前页面，发布前请检查图片与文字。</div><section id="editor" aria-label="内容编辑区"></section><footer>纸间营造 · 内容管理 <span id="revision"></span></footer></main>
+</div><div id="loading" class="loading" role="status">正在连接内容管理…</div>
+</body></html>

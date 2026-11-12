@@ -14,15 +14,33 @@ export function createApp(store, { adminToken = '', allowedOrigin = '', secureCo
   auth.install(app)
   app.use('/admin', express.static(fileURLToPath(new URL('./admin', import.meta.url)), { maxAge: 0 }))
   app.get('/', (req, res) => res.redirect('/admin/'))
-  app.post('/api/media', auth.guard, express.raw({ type: ['image/jpeg', 'image/png', 'image/webp'], limit: '4mb' }), async (req, res, next) => {
+  app.post('/api/media', auth.guard, express.raw({ type: ['image/jpeg', 'image/png', 'image/webp', 'video/mp4'], limit: '10mb' }), async (req, res, next) => {
     const data = req.body, type = req.headers['content-type']
-    const valid = Buffer.isBuffer(data) && data.length > 12 && ((type === 'image/jpeg' && data.subarray(0, 3).equals(Buffer.from([255, 216, 255]))) || (type === 'image/png' && data.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))) || (type === 'image/webp' && data.toString('ascii', 0, 4) === 'RIFF' && data.toString('ascii', 8, 12) === 'WEBP'))
-    if (!valid) return res.status(400).json({ error: '请上传有效的 JPG、PNG 或 WebP 图片（最大 4 MB）' })
+    const image = type?.startsWith('image/')
+    const valid = Buffer.isBuffer(data) && data.length > 12 && ((type === 'image/jpeg' && data.subarray(0, 3).equals(Buffer.from([255, 216, 255]))) || (type === 'image/png' && data.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))) || (type === 'image/webp' && data.toString('ascii', 0, 4) === 'RIFF' && data.toString('ascii', 8, 12) === 'WEBP') || (type === 'video/mp4' && data.toString('ascii', 4, 8) === 'ftyp'))
+    if (!valid || (image && data.length > 4 * 1024 * 1024)) return res.status(400).json({ error: '请上传有效的 JPG、PNG、WebP（最大 4 MB）或 MP4 视频（最大 10 MB）' })
     try { const id = randomUUID(); await store.saveMedia(id, type, data); res.status(201).json({ url: '/api/media/' + id }) } catch (error) { next(error) }
   })
   app.get('/api/media/:id', async (req, res, next) => {
     if (!/^[a-f0-9-]{36}$/.test(req.params.id)) return res.sendStatus(404)
-    try { const media = await store.readMedia(req.params.id); if (!media) return res.sendStatus(404); res.set('Cross-Origin-Resource-Policy', 'cross-origin').set('Cache-Control', 'public, max-age=31536000, immutable').type(media.type).send(media.data) } catch (error) { next(error) }
+    try {
+      const media = await store.readMedia(req.params.id); if (!media) return res.sendStatus(404)
+      res.set('Cross-Origin-Resource-Policy', 'cross-origin').set('Cache-Control', 'public, max-age=31536000, immutable').type(media.type)
+      if (media.type === 'video/mp4') {
+        const size = media.data.length
+        res.set('Accept-Ranges', 'bytes')
+        if (req.headers.range) {
+          const match = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range)
+          if (!match || (!match[1] && !match[2])) return res.status(416).set('Content-Range', `bytes */${size}`).end()
+          let start = match[1] ? Number(match[1]) : Math.max(0, size - Number(match[2]))
+          let end = match[1] && match[2] ? Number(match[2]) : size - 1
+          if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start >= size || start > end || (!match[1] && Number(match[2]) === 0)) return res.status(416).set('Content-Range', `bytes */${size}`).end()
+          end = Math.min(end, size - 1)
+          return res.status(206).set('Content-Range', `bytes ${start}-${end}/${size}`).send(media.data.subarray(start, end + 1))
+        }
+      }
+      res.send(media.data)
+    } catch (error) { next(error) }
   })
   app.get('/healthz', async (req, res) => { try { await store.read(); res.json({ status: 'ok' }) } catch { res.status(503).json({ error: '内容存储不可用' }) } })
   app.use('/static/images', express.static(fileURLToPath(new URL('../src/static/images', import.meta.url)), { maxAge: '1d', dotfiles: 'deny', setHeaders: res => res.set('Cross-Origin-Resource-Policy', 'cross-origin') }))

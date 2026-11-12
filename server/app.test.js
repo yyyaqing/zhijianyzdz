@@ -66,3 +66,26 @@ test('后台会话、CSRF 校验、图片鉴权与跨重启持久化', async t =
   const reopened = await createStore({ DATA_DIR: dir }); assert.deepEqual((await reopened.readMedia(url.split('/').pop())).data, png); assert.equal((await reopened.read()).content.research[0].description, changed.research[0].description); await reopened.close()
   assert.equal((await fetch(base + '/api/media/invalid')).status, 404)
 })
+test('作品视频与 Logo：兼容旧内容、上传、范围读取和保存', async t => {
+  const dir = await mkdtemp(path.join(os.tmpdir(), 'zhijian-video-'))
+  const store = await createStore({ DATA_DIR: dir })
+  const server = createApp(store, { adminToken: token }).listen(0, '127.0.0.1')
+  await new Promise(resolve => server.once('listening', resolve))
+  const base = 'http://127.0.0.1:' + server.address().port
+  t.after(async () => { await new Promise(resolve => server.close(resolve)); await store.close(); await rm(dir, { recursive: true, force: true }) })
+  const old = structuredClone(demoContent); delete old.studio.logo
+  assert.equal((await fetch(base + '/api/content', { method: 'PUT', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json', 'If-Match': '"1"' }, body: JSON.stringify(old) })).status, 200)
+  const mp4 = Buffer.concat([Buffer.from([0, 0, 0, 20]), Buffer.from('ftypisom'), Buffer.alloc(20, 5)])
+  const upload = body => fetch(base + '/api/media', { method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'video/mp4' }, body })
+  assert.equal((await upload(Buffer.from('not an mp4 file!'))).status, 400)
+  const response = await upload(mp4); assert.equal(response.status, 201)
+  const { url } = await response.json()
+  const partial = await fetch(base + url, { headers: { Range: 'bytes=4-11' } })
+  assert.equal(partial.status, 206); assert.equal(partial.headers.get('content-range'), `bytes 4-11/${mp4.length}`); assert.deepEqual(Buffer.from(await partial.arrayBuffer()), mp4.subarray(4, 12))
+  const suffix = await fetch(base + url, { headers: { Range: 'bytes=-5' } }); assert.deepEqual(Buffer.from(await suffix.arrayBuffer()), mp4.subarray(-5))
+  assert.equal((await fetch(base + url, { headers: { Range: 'bytes=999-' } })).status, 416)
+  old.studio.logo = '/static/images/zen-logo.png'; old.projects[0].videos = [url]
+  const saved = await fetch(base + '/api/content', { method: 'PUT', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json', 'If-Match': '"2"' }, body: JSON.stringify(old) })
+  assert.equal(saved.status, 200)
+  const result = await (await fetch(base + '/api/content')).json(); assert.equal(result.projects[0].videos[0], url); assert.equal(result.studio.logo, old.studio.logo)
+})

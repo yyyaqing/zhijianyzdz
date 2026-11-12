@@ -4,7 +4,7 @@ export const demoContent = {
   schemaVersion: 1,
   isDemo: true,
   studio: {
-    name: '纸间营造', subtitle: '大曾',
+    name: '纸间营造', subtitle: '大曾', logo: '/static/images/zen-logo.png',
     intro: '以纸为始，向空间生长。我们关注建筑、室内与材料之间的联系，在日常观察与反复实践中，探索空间的更多可能。',
     services: '建筑 / 室内 / 材料研究', email: '', phone: '', qrCodes: [],
     slides: [

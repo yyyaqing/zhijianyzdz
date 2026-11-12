@@ -5,3 +5,5 @@
 
 .list-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;max-width:260px}.list-actions>button{white-space:nowrap}.section-heading>button{flex-shrink:0}.row-info{min-width:0;overflow-wrap:anywhere}
 @media(max-width:1000px){.list-actions{grid-column:2/-1;max-width:none}.list-actions .row-actions{display:flex}}
+
+.video-preview{display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px;letter-spacing:.12em}.media-field img[alt^="名称 Logo"]{object-fit:contain;background:#353535}

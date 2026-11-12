@@ -100,3 +100,7 @@ AppID 是公开标识。当前内容 API 不调用需要 AppSecret 或上传私�
 图片支持 JPG、PNG、WebP，单张最大 4 MB。上传文件保存至 MySQL 的 `portfolio_media` 表，内容保存在 `portfolio_content` 表；重启或重新部署容器后仍可读取。需将两张表一起备份。图片先上传、再发布内容，未使用的图片暂不自动清理。媒体 URL 为 `/api/media/<uuid>`；小程序需要将相对媒体路径转换成后端 HTTPS 地址。
 
 小程序前端生产配置：`VITE_CONTENT_MODE=cloud`，`VITE_WX_CLOUD_ENV=prod-d8giqg8xyf583206c`，`VITE_WX_CLOUD_SERVICE=express-smws`，`VITE_API_BASE=https://express-smws-345461-7-1529483059.sh.run.tcloudbase.com`。公开媒体域名需加入小程序后台合法域名配置，并在微信开发者工具及真机验证；云托管内容接口使用 `wx.cloud.callContainer`。前端需重新编译并上传才会从原演示版切换到远程内容。
+
+### 视频与 Logo（本地更新）
+
+作品详情支持上传 MP4（最大 10 MB）或填写 HTTPS 视频地址，视频和图片共用 `portfolio_media`；访问视频支持 HTTP Range。数据库 `max_allowed_packet` 建议至少 16 MB，并确认云托管请求体大小允许 10 MB。工作室可设置透明 PNG Logo。上述更新部署后才生效；小程序需更新且须配置媒体合法域名并进行真机验证。

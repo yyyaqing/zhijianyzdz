@@ -6,12 +6,12 @@ const step = z.object({ id: identifier, title: text, text, type: z.enum(['image'
 export const contentSchema = z.object({
   schemaVersion: z.literal(1),
   isDemo: z.boolean(),
-  studio: z.object({ name: text, subtitle: text, intro: text, services: text,
+  studio: z.object({ name: text, subtitle: text, logo: z.union([media, z.literal('')]).optional(), intro: text, services: text,
     email: z.union([z.string().email(), z.literal('')]), phone: z.string().max(40).regex(/^[+\d\s()-]*$/),
     qrCodes: z.array(z.object({ image: media, label: text }).strict()).max(4),
     slides: z.array(z.object({ id: identifier, image: media, alt: text }).strict()).max(20),
   }).strict(),
-  projects: z.array(z.object({ id: identifier, title: text, category: z.enum(['architecture', 'interior', 'material']), location: text, year: z.string().max(20), cover: media, ratio: z.number().min(.3).max(3), description: text, images: z.array(media).max(80) }).strict()).max(500),
+  projects: z.array(z.object({ id: identifier, title: text, category: z.enum(['architecture', 'interior', 'material']), location: text, year: z.string().max(20), cover: media, ratio: z.number().min(.3).max(3), description: text, images: z.array(media).max(80), videos: z.array(media).max(20).optional() }).strict()).max(500),
   researchIntro: text,
   research: z.array(z.object({ id: identifier, code: text, title: text, cover: media, description: text, steps: z.array(step).max(100).superRefine((items, context) => { if (new Set(items.map(s => s.id)).size !== items.length) context.addIssue({ code: 'custom', message: '步骤 ID 不可重复' }) }) }).strict()).max(500),
 }).strict().superRefine((data, context) => {

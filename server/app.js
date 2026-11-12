@@ -12,6 +12,7 @@ export function createApp(store, { adminToken = '', allowedOrigin = '', secureCo
   const auth = adminAuth(adminToken, secureCookies)
   app.use(express.json({ limit: '2mb' }))
   auth.install(app)
+  app.get('/admin/brand.js', (req, res) => res.sendFile(fileURLToPath(new URL('../src/data/brand.js', import.meta.url))))
   app.use('/admin', express.static(fileURLToPath(new URL('./admin', import.meta.url)), { maxAge: 0 }))
   app.get('/', (req, res) => res.redirect('/admin/'))
   app.post('/api/media', auth.guard, express.raw({ type: ['image/jpeg', 'image/png', 'image/webp', 'video/mp4'], limit: '10mb' }), async (req, res, next) => {

@@ -1,3 +1,4 @@
+import { brandDefaults, brandFonts, brandSettings } from './brand.js'
 const $ = selector => document.querySelector(selector)
 let content, etag, section = 'studio', selected = null, dirty = false, busy = false
 const titles = { studio: '工作室', slides: '轮播与二维码', projects: '作品管理', research: '研究管理' }
@@ -14,9 +15,29 @@ async function api(url, options = {}) {
   if (!response.ok) { const data = await response.json().catch(() => ({})); const details = data.details?.slice(0, 4).map(i => `${i.path.join(' › ')}：${i.message}`).join('\n'); throw Error((data.error || '请求失败，请稍后重试') + (details ? '\n' + details : '')) }
   return response
 }
-function field(label, path, value, type = 'text', hint = '') {
+function field(label, path, value, type = 'text', hint = '', limits = {}) {
   const attrs = `data-path="${esc(path)}"`
-  return `<label>${esc(label)}${type === 'textarea' ? `<textarea ${attrs}>${esc(value)}</textarea>` : `<input ${attrs} type="${type}" value="${esc(value)}" ${type === 'number' ? 'min="0.3" max="3" step="0.01"' : ''}>`}${hint ? `<p class="hint">${esc(hint)}</p>` : ''}</label>`
+  return `<label>${esc(label)}${type === 'textarea' ? `<textarea ${attrs}>${esc(value)}</textarea>` : `<input ${attrs} type="${type}" value="${esc(value)}" ${type === 'number' ? `min="${limits.min ?? .3}" max="${limits.max ?? 3}" step="${limits.step ?? .01}"` : ''}>`}${hint ? `<p class="hint">${esc(hint)}</p>` : ''}</label>`
+}
+function brandEditor(studio) {
+  const settings = brandSettings(studio)
+  return `<div class="editor-section">${heading('名称与 Logo 样式', '文字名称与图片 Logo 分别设置，修改后可在右侧预览。')}<div class="brand-settings"><div><label>名称字体<select data-path="studio.brandStyle.nameFont">${Object.entries(brandFonts).map(([key, font]) => `<option value="${key}" ${settings.nameFont === key ? 'selected' : ''}>${font.label}</option>`).join('')}</select><p class="hint">系统字体随设备适配；上传 Logo 后，字体设置会在清空 Logo、显示文字时生效。</p></label>${field('名称字号（px）', 'studio.brandStyle.nameFontSize', settings.nameFontSize, 'number', '10–64，以 375px 手机宽度为基准，其他屏幕等比例适配。', { min: 10, max: 64, step: 1 })}${field('Logo 展示比例（%）', 'studio.brandStyle.logoScale', settings.logoScale, 'number', '10–200。50% 为原尺寸的一半；保留图片比例与透明背景。', { min: 10, max: 200, step: 1 })}</div><div><div class="brand-preview" aria-label="首页品牌预览"><div class="brand-preview-content"><img id="brand-preview-logo" alt="名称 Logo 预览"><div id="brand-preview-text"><div class="brand-preview-name"></div><div class="brand-preview-subtitle"></div></div></div></div><p class="brand-preview-note">首页效果预览 · 保存并发布后同步到小程序</p></div></div></div>`
+}
+function updateBrandPreview() {
+  const preview = $('.brand-preview')
+  if (!preview) return
+  const studio = content.studio, settings = brandSettings(studio)
+  const scale = preview.clientWidth / 375, logo = $('#brand-preview-logo'), text = $('#brand-preview-text')
+  const background = studio.slides[0]?.image
+  preview.style.backgroundImage = background ? `url(${JSON.stringify(background)})` : ''
+  logo.hidden = !studio.logo; text.hidden = !!studio.logo
+  if (studio.logo) logo.src = studio.logo
+  logo.style.width = 180 * settings.logoScale / 100 * scale + 'px'
+  logo.style.height = 96.5 * settings.logoScale / 100 * scale + 'px'
+  const name = $('.brand-preview-name')
+  name.textContent = studio.name; name.style.fontFamily = brandFonts[settings.nameFont].family; name.style.fontSize = settings.nameFontSize * scale + 'px'
+  name.style.letterSpacing = 3 * scale + 'px'; name.style.paddingLeft = 3 * scale + 'px'
+  const subtitle = $('.brand-preview-subtitle'); subtitle.textContent = studio.subtitle; subtitle.style.fontSize = 9 * scale + 'px'; subtitle.style.letterSpacing = 4 * scale + 'px'; subtitle.style.paddingLeft = 4 * scale + 'px'
 }
 function media(label, path, value, video = false) {
   return `<div class="media-field">${video ? '<div class="media-preview video-preview">MP4</div>' : `<img class="media-preview" src="${esc(value)}" alt="${esc(label)}预览">`}<div>${field(label, path, value, 'text', video ? '上传 MP4（最大 10 MB），或填写可公开播放的 HTTPS 视频地址。' : '使用 HTTPS 图片地址，或上传 JPG、PNG、WebP（最大 4 MB）。')}<input type="file" accept="${video ? 'video/mp4' : 'image/jpeg,image/png,image/webp'}" data-upload="${esc(path)}" data-video="${video}" aria-label="上传${esc(label)}"></div></div>`
@@ -34,7 +55,7 @@ function render() {
   let html = ''
   if (section === 'studio') {
     const s = content.studio
-    html = `<div class="editor-section">${heading('工作室信息', '对应 studio 页的品牌、简介和服务内容。')}<div class="form-grid">${field('工作室名称', 'studio.name', s.name)}${field('副标题 / 主理人', 'studio.subtitle', s.subtitle)}<div class="full">${media('名称 Logo（留空显示文字）', 'studio.logo', s.logo)}${field('工作室介绍', 'studio.intro', s.intro, 'textarea')}${field('服务范围', 'studio.services', s.services, 'textarea')}</div></div></div><div class="editor-section">${heading('联系信息', '访客可在小程序 studio 页面联系你。')}<div class="form-grid">${field('电子邮箱', 'studio.email', s.email, 'email')}${field('联系电话', 'studio.phone', s.phone, 'tel')}</div><label class="check"><input type="checkbox" data-path="isDemo" ${content.isDemo ? 'checked' : ''}>显示演示内容提示</label><p class="hint">正式内容准备完成后，可关闭演示提示。</p></div>`
+    html = `<div class="editor-section">${heading('工作室信息', '对应 about 页的品牌、简介和服务内容。')}<div class="form-grid">${field('工作室名称', 'studio.name', s.name)}${field('副标题 / 主理人', 'studio.subtitle', s.subtitle)}<div class="full">${media('名称 Logo（留空显示文字）', 'studio.logo', s.logo)}</div></div>${brandEditor(s)}${field('工作室介绍', 'studio.intro', s.intro, 'textarea')}${field('服务范围', 'studio.services', s.services, 'textarea')}</div><div class="editor-section">${heading('联系信息', '访客可在小程序 about 页面联系你。')}<div class="form-grid">${field('电子邮箱', 'studio.email', s.email, 'email')}${field('联系电话', 'studio.phone', s.phone, 'tel')}</div><label class="check"><input type="checkbox" data-path="isDemo" ${content.isDemo ? 'checked' : ''}>显示演示内容提示</label><p class="hint">正式内容准备完成后，可关闭演示提示。</p></div>`
   } else if (section === 'slides') {
     html = heading('首页轮播', '按显示顺序排列，最多 20 张。', add('studio.slides', '添加轮播')) + content.studio.slides.map((s, i, a) => `<article class="panel">${heading(`轮播 ${String(i + 1).padStart(2, '0')}`, '', controls('studio.slides', i, a.length))}${media('轮播图片', `studio.slides.${i}.image`, s.image)}${field('图片说明', `studio.slides.${i}.alt`, s.alt)}</article>`).join('')
     html += `<div class="editor-section">${heading('联系二维码', '支持微信、公众号等二维码，最多 4 个。', add('studio.qrCodes', '添加二维码'))}${content.studio.qrCodes.map((s, i, a) => `<article class="panel">${heading(`二维码 ${i + 1}`, '', controls('studio.qrCodes', i, a.length))}${media('二维码图片', `studio.qrCodes.${i}.image`, s.image)}${field('显示名称', `studio.qrCodes.${i}.label`, s.label)}</article>`).join('')}</div>`
@@ -51,10 +72,11 @@ function render() {
     html += items.length ? `<div class="item-list">${items.map((item, i) => `<article class="list-row"><span class="row-number">${String(i + 1).padStart(2, '0')}</span><img class="cover" src="${esc(item.cover)}" alt="${esc(item.title)}封面"><div class="row-info"><strong>${esc(item.title || '未命名内容')}</strong><small>${esc(isProject ? [category[item.category], item.location, item.year].filter(Boolean).join(' / ') : item.code)} · ${isProject ? item.images.length + ' 张详情图片' : item.steps.length + ' 个步骤'}</small></div><div class="list-actions"><button data-edit="${i}">编辑详情 ↗</button>${controls(section, i, items.length)}</div></article>`).join('')}</div>` : '<div class="empty">还没有内容，点击右上方新建。</div>'
   }
   $('#editor').innerHTML = html
+  updateBrandPreview()
 }
 async function load() {
   note(); busy = true; $('#save').disabled = true
-  try { const res = await api('/api/content'); content = await res.json(); content.studio.logo ??= '/static/images/zen-logo.png'; content.projects.forEach(item => { item.videos ??= [] }); etag = res.headers.get('etag'); selected = null; dirty = false; $('#revision').textContent = '内容版本 ' + etag.replaceAll('"', ''); status('已与线上内容同步'); render() } finally { busy = false; $('#save').disabled = !dirty }
+  try { const res = await api('/api/content'); content = await res.json(); content.studio.logo ??= '/static/images/zen-logo.png'; content.studio.brandStyle = { ...brandDefaults, ...content.studio.brandStyle }; content.projects.forEach(item => { item.videos ??= [] }); etag = res.headers.get('etag'); selected = null; dirty = false; $('#revision').textContent = '内容版本 ' + etag.replaceAll('"', ''); status('已与线上内容同步'); render() } finally { busy = false; $('#save').disabled = !dirty }
 }
 async function enter() { $('#login').hidden = true; $('#workspace').hidden = false; if (content && dirty) { render(); return } await load() }
 $('#login-form').addEventListener('submit', async event => {
@@ -62,10 +84,10 @@ $('#login-form').addEventListener('submit', async event => {
   try { await api('/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: $('#token').value }) }); $('#token').value = ''; await enter() } catch (error) { $('#login-error').textContent = error.message } finally { button.disabled = false }
 })
 $('nav').addEventListener('click', e => { const b = e.target.closest('[data-section]'); if (!b || busy) return; section = b.dataset.section; selected = null; render(); note() })
-$('#editor').addEventListener('input', e => { const el = e.target; if (!el.dataset.path) return; set(el.dataset.path, el.type === 'checkbox' ? el.checked : el.type === 'number' ? Number(el.value) : el.value); changed() })
+$('#editor').addEventListener('input', e => { const el = e.target; if (!el.dataset.path) return; set(el.dataset.path, el.type === 'checkbox' ? el.checked : el.type === 'number' ? Number(el.value) : el.value); changed(); updateBrandPreview() })
 $('#editor').addEventListener('change', async e => {
   const el = e.target
-  if (el.dataset.path) { set(el.dataset.path, el.type === 'checkbox' ? el.checked : el.type === 'number' ? Number(el.value) : el.value); changed(); if (el.dataset.render !== undefined) render(); else if (el.closest('.media-field')) { const preview = el.closest('.media-field').querySelector('img'); if (preview) preview.src = el.value } }
+  if (el.dataset.path) { set(el.dataset.path, el.type === 'checkbox' ? el.checked : el.type === 'number' ? Number(el.value) : el.value); changed(); if (el.dataset.render !== undefined) render(); else if (el.closest('.media-field')) { const preview = el.closest('.media-field').querySelector('img'); if (preview) preview.src = el.value } updateBrandPreview() }
   if (!el.dataset.upload || !el.files[0]) return
   const file = el.files[0]
   const isVideo = el.dataset.video === 'true', limit = isVideo ? 10 : 4
@@ -90,10 +112,13 @@ $('#editor').addEventListener('click', e => {
 })
 $('#save').addEventListener('click', async () => {
   if (busy || !dirty) return
+  const invalid = Array.from($('#editor').querySelectorAll('input[type="number"]')).find(input => !input.value || !input.reportValidity())
+  if (invalid) { invalid.focus(); return note('请填写有效的数值，范围见输入框下方说明。') }
   busy = true; $('#save').disabled = true; $('#editor').setAttribute('aria-busy', 'true'); status('正在发布…'); note()
   try { const res = await api('/api/content', { method: 'PUT', headers: { 'Content-Type': 'application/json', 'If-Match': etag }, body: JSON.stringify(content) }); etag = res.headers.get('etag'); dirty = false; $('#revision').textContent = '内容版本 ' + etag.replaceAll('"', ''); status('已发布 · ' + new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })) } catch (error) { note(error.message + '\n当前修改仍保留；若内容已被他人更新，请先备份当前修改，再点击重新读取。'); changed() } finally { busy = false; $('#save').disabled = !dirty; $('#editor').removeAttribute('aria-busy') }
 })
 $('#reload').addEventListener('click', () => { if (busy || dirty && !confirm('重新读取会丢弃当前未发布的修改，是否继续？')) return; load().catch(e => note(e.message)) })
 $('#logout').addEventListener('click', async () => { if (dirty && !confirm('还有未发布的修改，退出会丢弃，是否继续？')) return; await api('/api/admin/logout', { method: 'POST' }); content = null; dirty = false; $('#workspace').hidden = true; $('#login').hidden = false })
 window.addEventListener('beforeunload', e => { if (dirty) { e.preventDefault(); e.returnValue = '' } })
+window.addEventListener('resize', updateBrandPreview)
 api('/api/admin/session').then(enter).catch(() => { $('#login').hidden = false }).finally(() => { $('#loading').hidden = true })

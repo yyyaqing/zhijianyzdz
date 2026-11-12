@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { brandFonts } from '../src/data/brand.js'
 const text = z.string().max(10000)
 const media = z.string().max(2048).refine(value => /^https:\/\/[^\s]+$/.test(value) || /^\/api\/media\/[a-f0-9-]{36}$/.test(value) || /^\/static\/images\/[\w.-]+$/.test(value), '媒体必须使用 HTTPS 或内置图片路径')
 const identifier = z.string().regex(/^[a-zA-Z0-9_-]{1,80}$/)
@@ -7,6 +8,7 @@ export const contentSchema = z.object({
   schemaVersion: z.literal(1),
   isDemo: z.boolean(),
   studio: z.object({ name: text, subtitle: text, logo: z.union([media, z.literal('')]).optional(), intro: text, services: text,
+    brandStyle: z.object({ nameFont: z.enum(Object.keys(brandFonts)).optional(), nameFontSize: z.number().min(10).max(64).optional(), logoScale: z.number().min(10).max(200).optional() }).strict().optional(),
     email: z.union([z.string().email(), z.literal('')]), phone: z.string().max(40).regex(/^[+\d\s()-]*$/),
     qrCodes: z.array(z.object({ image: media, label: text }).strict()).max(4),
     slides: z.array(z.object({ id: identifier, image: media, alt: text }).strict()).max(20),

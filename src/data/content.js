@@ -1,4 +1,5 @@
 // 演示内容，正式发布前替换为自己的作品与联系方式。
+import workMaterials from './work-materials.js'
 const image = (name) => `/static/images/${name}.jpg`
 export const demoContent = {
   schemaVersion: 1,
@@ -39,3 +40,4 @@ export const demoContent = {
     { id: 'r006', code: 'ZJ-006', title: '构造练习', cover: image('facade'), description: '在制作中理解构造，在构造中理解空间。', steps: [{ id: 'f1', title: '连接与支撑', text: '研究材料的连接逻辑与结构表达。', type: 'image', src: image('facade') }, { id: 'f2', title: '回到空间', text: '把构造细节放回空间，重新检验最初的想法。', type: 'image', src: image('stair') }] },
   ],
 }
+demoContent.projects.push(...workMaterials)

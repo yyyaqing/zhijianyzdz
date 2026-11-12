@@ -28,7 +28,8 @@ export function createApp(store, { adminToken = '', allowedOrigin = '', secureCo
   app.use('/static/images', express.static(fileURLToPath(new URL('../src/static/images', import.meta.url)), { maxAge: '1d', dotfiles: 'deny', setHeaders: res => res.set('Cross-Origin-Resource-Policy', 'cross-origin') }))
   app.get('/api/content', async (req, res, next) => { try { const result = await store.read(); res.set('Cache-Control', 'no-cache').set('ETag', '"' + result.revision + '"').json(result.content) } catch (error) { next(error) } })
   app.put('/api/content', auth.guard, async (req, res, next) => {
-    const revision = /^"(\d+)"$/.exec(req.headers['if-match'] || '')
+    // 云托管压缩响应时会将 ETag 改为弱标记；这里比较的是内容版本号。
+    const revision = /^(?:W\/)?"(\d+)"$/.exec(req.headers['if-match'] || '')
     if (!revision) return res.status(428).json({ error: '请携带上次读取的 ETag 作为 If-Match，避免覆盖其他修改' })
     const parsed = contentSchema.safeParse(req.body)
     if (!parsed.success) return res.status(400).json({ error: '内容校验失败', details: parsed.error.issues })

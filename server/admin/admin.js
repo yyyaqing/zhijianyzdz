@@ -2,7 +2,7 @@ import { brandDefaults, brandFonts, brandSettings } from './brand.js'
 import { uiTextGroups, resolveUiText } from './ui-text.js'
 const $ = selector => document.querySelector(selector)
 let content, etag, section = 'studio', selected = null, dirty = false, busy = false
-const titles = { studio: '工作室', slides: '轮播与二维码', projects: '作品管理', research: '产品管理', uiText: '界面文字' }
+const titles = { studio: '工作室', slides: '轮播与二维码', awards: '奖项展示', projects: '作品管理', research: '产品管理', uiText: '界面文字' }
 const category = { architecture: '建筑', interior: '室内', material: '材料' }
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
 const uid = () => 'item_' + crypto.randomUUID().replaceAll('-', '').slice(0, 16)
@@ -60,7 +60,11 @@ function render() {
     html += uiTextGroups.map((group, index) => `<details class="text-group" ${index === 0 ? 'open' : ''}><summary>${esc(group.label)}<small>${group.fields.length} 项</small></summary><div class="form-grid">${group.fields.map(([key, label]) => { const value = content.uiText[group.key][key], tokens = [...new Set(value.match(/\{\w+\}/g) || [])]; return field(label, `uiText.${group.key}.${key}`, value, 'text', tokens.length ? '保留 ' + tokens.join('、') + '，显示时自动替换为对应编号或标题。' : '') }).join('')}</div></details>`).join('')
   } else if (section === 'studio') {
     const s = content.studio
-    html = `<div class="editor-section">${heading('工作室信息', '对应 about 页的品牌、简介和服务内容。')}<div class="form-grid">${field('工作室名称', 'studio.name', s.name)}${field('副标题 / 主理人', 'studio.subtitle', s.subtitle)}<div class="full">${media('名称 Logo（留空显示文字）', 'studio.logo', s.logo)}</div></div>${brandEditor(s)}${field('工作室介绍', 'studio.intro', s.intro, 'textarea')}${field('服务范围', 'studio.services', s.services, 'textarea')}</div><div class="editor-section">${heading('联系信息', '访客可在小程序 about 页面联系你。')}<div class="form-grid">${field('电子邮箱', 'studio.email', s.email, 'email')}${field('联系电话', 'studio.phone', s.phone, 'tel')}</div><label class="check"><input type="checkbox" data-path="isDemo" ${content.isDemo ? 'checked' : ''}>显示演示内容提示</label><p class="hint">正式内容准备完成后，可关闭演示提示。</p></div>`
+    html = `<div class="editor-section">${heading('工作室信息', '对应 about 页的品牌、简介和服务内容。')}<div class="form-grid">${field('工作室名称', 'studio.name', s.name)}${field('副标题 / 主理人', 'studio.subtitle', s.subtitle)}<div class="full">${media('名称 Logo（留空显示文字）', 'studio.logo', s.logo)}</div></div>${brandEditor(s)}${field('工作室介绍', 'studio.intro', s.intro, 'textarea')}${field('服务范围', 'studio.services', s.services, 'textarea')}</div><div class="editor-section">${heading('联系信息', '访客可在小程序 about 页面联系你。')}<div class="form-grid">${field('电子邮箱', 'studio.email', s.email, 'email')}${field('联系电话', 'studio.phone', s.phone, 'tel')}</div></div>`
+  } else if (section === 'awards') {
+    html = heading('AWARDS · 奖项展示', '显示在 about 页 Services 与 Contact 之间；可先放奖项 Logo，再放领奖照片。按顺序展示，点击可放大。最多 50 张，未配置图片时隐藏此栏目。')
+    html += `<div class="editor-section">${field('栏目标题', 'uiText.studio.awards', content.uiText.studio.awards)}<label>批量上传奖项图片<input type="file" accept="image/jpeg,image/png,image/webp" multiple data-awards-upload aria-label="批量上传奖项图片"><p class="hint">可一次选择多张 JPG、PNG、WebP，每张不超过 4 MB。上传后点击「保存并发布」。</p></label></div>`
+    html += content.studio.awards.length ? content.studio.awards.map((award, i, a) => `<article class="panel">${heading(`奖项图片 ${i + 1}`, '', controls('studio.awards', i, a.length))}<label>展示方式<select data-path="studio.awards.${i}.display"><option value="logo" ${award.display === 'logo' ? 'selected' : ''}>Logo · 居中展示</option><option value="photo" ${award.display !== 'logo' ? 'selected' : ''}>照片 · 按原比例铺满内容宽度</option></select></label>${media('奖项图片', `studio.awards.${i}.image`, award.image)}${field('图片说明（选填）', `studio.awards.${i}.alt`, award.alt)}</article>`).join('') : '<div class="empty">还没有奖项图片，请在上方选择图片上传。</div>'
   } else if (section === 'slides') {
     html = heading('首页轮播', '按显示顺序排列，最多 20 张。', add('studio.slides', '添加轮播')) + content.studio.slides.map((s, i, a) => `<article class="panel">${heading(`轮播 ${String(i + 1).padStart(2, '0')}`, '', controls('studio.slides', i, a.length))}${media('轮播图片', `studio.slides.${i}.image`, s.image)}${field('图片说明', `studio.slides.${i}.alt`, s.alt)}</article>`).join('')
     html += `<div class="editor-section">${heading('联系二维码', '支持微信、公众号等二维码，最多 4 个。', add('studio.qrCodes', '添加二维码'))}${content.studio.qrCodes.map((s, i, a) => `<article class="panel">${heading(`二维码 ${i + 1}`, '', controls('studio.qrCodes', i, a.length))}${media('二维码图片', `studio.qrCodes.${i}.image`, s.image)}${field('显示名称', `studio.qrCodes.${i}.label`, s.label)}</article>`).join('')}</div>`
@@ -81,7 +85,26 @@ function render() {
 }
 async function load() {
   note(); busy = true; $('#save').disabled = true
-  try { const res = await api('/api/content'); content = await res.json(); content.uiText = resolveUiText(content.uiText); content.studio.logo ??= '/static/images/zen-logo.png'; content.studio.brandStyle = { ...brandDefaults, ...content.studio.brandStyle }; content.projects.forEach(item => { item.videos ??= [] }); etag = res.headers.get('etag'); selected = null; dirty = false; $('#revision').textContent = '内容版本 ' + etag.replaceAll('"', ''); status('已与线上内容同步'); render() } finally { busy = false; $('#save').disabled = !dirty }
+  try { const res = await api('/api/content'); content = await res.json(); content.uiText = resolveUiText(content.uiText); content.studio.logo ??= '/static/images/zen-logo.png'; content.studio.awards ??= []; content.studio.brandStyle = { ...brandDefaults, ...content.studio.brandStyle }; content.projects.forEach(item => { item.videos ??= [] }); etag = res.headers.get('etag'); selected = null; dirty = false; $('#revision').textContent = '内容版本 ' + etag.replaceAll('"', ''); status('已与线上内容同步'); render() } finally { busy = false; $('#save').disabled = !dirty }
+}
+async function uploadAwards(input) {
+  if (busy) return
+  const files = Array.from(input.files || [])
+  if (!files.length) return
+  if (content.studio.awards.length + files.length > 50) { note('最多支持 50 张奖项图片，请减少选择数量。'); input.value = ''; return }
+  if (files.some(file => !['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 4 * 1024 * 1024)) { note('请选择 JPG、PNG、WebP 图片，每张不超过 4 MB。'); input.value = ''; return }
+  busy = true; $('#save').disabled = true; $('#editor').setAttribute('aria-busy', 'true'); note()
+  let uploaded = 0
+  try {
+    for (const file of files) {
+      status(`正在上传奖项图片 ${uploaded + 1} / ${files.length}…`)
+      const response = await api('/api/media', { method: 'POST', headers: { 'Content-Type': file.type }, body: file })
+      const data = await response.json()
+      content.studio.awards.push({ image: data.url, alt: '', display: content.studio.awards.length === 0 ? 'logo' : 'photo' }); uploaded++; changed()
+    }
+    note(`已上传 ${uploaded} 张奖项图片，可调整顺序后保存并发布。`)
+  } catch (error) { note(`已上传 ${uploaded} / ${files.length} 张，已成功的图片已保留。${error.message}；请重新选择其余图片上传。`) }
+  finally { busy = false; render(); $('#editor').removeAttribute('aria-busy'); $('#save').disabled = !dirty; if (dirty) changed(); else status('图片未更新') }
 }
 async function enter() { $('#login').hidden = true; $('#workspace').hidden = false; if (content && dirty) { render(); return } await load() }
 $('#login-form').addEventListener('submit', async event => {
@@ -92,6 +115,7 @@ $('nav').addEventListener('click', e => { const b = e.target.closest('[data-sect
 $('#editor').addEventListener('input', e => { const el = e.target; if (!el.dataset.path) return; set(el.dataset.path, el.type === 'checkbox' ? el.checked : el.type === 'number' ? Number(el.value) : el.value); changed(); updateBrandPreview() })
 $('#editor').addEventListener('change', async e => {
   const el = e.target
+  if (el.dataset.awardsUpload !== undefined) { await uploadAwards(el); return }
   if (el.dataset.path) { set(el.dataset.path, el.type === 'checkbox' ? el.checked : el.type === 'number' ? Number(el.value) : el.value); changed(); if (el.dataset.render !== undefined) render(); else if (el.closest('.media-field')) { const preview = el.closest('.media-field').querySelector('img'); if (preview) preview.src = el.value } updateBrandPreview() }
   if (!el.dataset.upload || !el.files[0]) return
   const file = el.files[0]

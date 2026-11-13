@@ -1,13 +1,14 @@
-// 演示内容，正式发布前替换为自己的作品与联系方式。
+// 默认内容，作品与联系方式可通过后台维护。
 import workMaterials from './work-materials.js'
 import { resolveUiText } from './ui-text.js'
 const image = (name) => `/static/images/${name}.jpg`
 export const demoContent = {
   schemaVersion: 1,
-  isDemo: true,
+  isDemo: false,
   uiText: resolveUiText(),
   studio: {
     name: '纸间营造', subtitle: '大曾', logo: '/static/images/zen-logo.png',
+    awards: [],
     intro: '以纸为始，向空间生长。我们关注建筑、室内与材料之间的联系，在日常观察与反复实践中，探索空间的更多可能。',
     services: '建筑 / 室内 / 材料研究', email: '', phone: '', qrCodes: [],
     slides: [
@@ -30,7 +31,7 @@ export const demoContent = {
     { id: 'r001', code: 'ZJ-001', title: '材料观察', cover: image('material'), description: '从材料本身出发，观察纹理、尺度与光的变化。', steps: [
       { id: 'a1', title: '观察与采集', text: '记录材料在不同光线下的色泽与纹理，建立最初的样本档案。', type: 'image', src: image('material') },
       { id: 'a2', title: '局部与整体', text: '把局部细节放回空间，观察材料与周围环境的联系。', type: 'image', src: image('gallery') },
-      { id: 'a3', title: '影像记录', text: '此处为视频播放器演示，正式版本替换为自己的研究过程视频。', type: 'video', src: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4', poster: '' },
+      { id: 'a3', title: '影像记录', text: '以影像记录材料观察与空间研究的过程。', type: 'video', src: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4', poster: '' },
     ] },
     { id: 'r002', code: 'ZJ-002', title: '光的路径', cover: image('light'), description: '以光为线索，理解空间的边界与层次。', steps: [
       { id: 'b1', title: '现场观察', text: '记录自然光进入空间的方向，观察明暗交界的位置。', type: 'image', src: image('light') },

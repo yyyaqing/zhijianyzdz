@@ -6,9 +6,8 @@ export const uiTextGroups = [
     ['shareTitle', '默认分享标题', ''], ['back', '详情顶部返回按钮', 'Back'],
   ] },
   { key: 'studio', label: '工作室页面', fields: [
-    ['intro', '介绍栏目标题', 'Intro'], ['services', '服务栏目标题', 'Services'], ['contact', '联系栏目标题', 'Contact'],
+    ['intro', '介绍栏目标题', 'Intro'], ['services', '服务栏目标题', 'Services'], ['awards', '奖项栏目标题', 'AWARDS'], ['contact', '联系栏目标题', 'Contact'],
     ['email', '邮箱前缀', 'Email:'], ['phone', '电话前缀', 'Tel:'], ['contactEmpty', '联系方式为空时的提示', '联系方式即将更新'],
-    ['demo', '工作室演示提示', '当前为演示内容 · 图片及介绍待替换'],
   ] },
   { key: 'work', label: '作品页面与详情', fields: [
     ['heading', '作品栏目标题', 'Typologies'], ['all', '全部分类', 'All'], ['architecture', '建筑分类', '建筑'],
@@ -16,13 +15,11 @@ export const uiTextGroups = [
     ['empty', '作品列表为空', '作品正在整理中'], ['categoryEmpty', '分类列表为空', '这个分类的作品正在整理中'],
     ['loading', '详情加载中', '正在加载作品…'], ['unpublished', '详情未发布', '作品暂未发布'],
     ['back', '返回作品列表', '返回作品'], ['next', '下一作品按钮', 'Next project'],
-    ['demo', '作品演示提示', '演示项目 · 照片及文字待替换'],
   ] },
   { key: 'product', label: '产品页面与详情', fields: [
     ['heading', '产品栏目标题', 'Product'], ['empty', '产品列表为空', '产品内容正在整理中'],
     ['loading', '详情加载中', '正在加载产品…'], ['unpublished', '详情未发布', '产品暂未发布'],
     ['back', '返回产品列表', '返回产品'], ['backToList', '详情底部返回按钮', 'Back to product'],
-    ['demo', '产品演示提示', '演示产品 · 素材待替换，视频仅作播放功能演示'],
   ] },
   { key: 'status', label: '加载、媒体与连接提示', fields: [
     ['retry', '连接重试按钮', '重试'], ['reload', '重新加载按钮', '重新加载'], ['imageFailed', '图片加载失败', '图片暂未加载'],

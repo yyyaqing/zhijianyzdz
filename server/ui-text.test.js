@@ -8,6 +8,7 @@ import { createApp } from './app.js'
 import { createStore } from './store.js'
 import { demoContent } from '../src/data/content.js'
 import { uiTextGroups, uiTextDefaults, resolveUiText, formatText } from '../src/data/ui-text.js'
+import { contentSchema } from './schema.js'
 
 test('界面文字：旧数据补齐、全部字段发布与重启持久化，保留现有内容', async t => {
   const dir = await mkdtemp(path.join(os.tmpdir(), 'zhijian-text-'))
@@ -59,4 +60,30 @@ test('部分文字配置兼容默认值，空文本保留，动态说明安全�
   assert.equal(text.studio.contactEmpty, '')
   assert.equal(formatText(text.accessibility.jumpStep, { index: 3, title: '木材 <&> {index}' }), '跳转步骤3 木材 <&> {index}')
   assert.equal(uiTextDefaults.navigation.productTab, 'product')
+})
+
+test('旧提示文字兼容读取，后台配置目录与发布结果不再包含提示字段', () => {
+  const legacy = structuredClone(demoContent)
+  legacy.isDemo = true
+  for (const key of ['studio', 'work', 'product']) legacy.uiText[key].demo = '旧提示文字'
+  const parsed = contentSchema.parse(legacy)
+  for (const key of ['studio', 'work', 'product']) {
+    assert.equal(parsed.uiText[key].demo, undefined)
+    assert.equal(resolveUiText(legacy.uiText)[key].demo, undefined)
+  }
+  assert.equal(uiTextGroups.some(group => group.fields.some(([key]) => key === 'demo')), false)
+  assert.deepEqual(parsed.projects, legacy.projects)
+})
+
+test('仅清理旧的预置占位内容，保留自定义地点、作品介绍与媒体', () => {
+  const legacy = structuredClone(demoContent)
+  legacy.projects[0].location = '素材演示'
+  legacy.projects[0].description += '\n本条为 Pexels 摄影素材展示，用于预览排版，不代表工作室实际设计项目。'
+  legacy.research[0].steps[2].text = '此处为视频播放器演示，正式版本替换为自己的研究过程视频。'
+  const parsed = contentSchema.parse(legacy)
+  assert.equal(parsed.projects[0].location, '')
+  assert.equal(parsed.projects[0].description, demoContent.projects[0].description)
+  assert.equal(parsed.research[0].steps[2].text, '')
+  assert.deepEqual(parsed.projects[0].images, legacy.projects[0].images)
+  assert.deepEqual(parsed.projects.slice(1), legacy.projects.slice(1))
 })

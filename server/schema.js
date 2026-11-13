@@ -1,12 +1,15 @@
 import { z } from 'zod'
 import { brandFonts } from '../src/data/brand.js'
+import { uiTextGroups } from '../src/data/ui-text.js'
 const text = z.string().max(10000)
+const uiTextSchema = z.object(Object.fromEntries(uiTextGroups.map(group => [group.key, z.object(Object.fromEntries(group.fields.map(([key, , fallback]) => [key, z.string().max(500).default(fallback)]))).strict().default({})]))).strict().default({})
 const media = z.string().max(2048).refine(value => /^https:\/\/[^\s]+$/.test(value) || /^\/api\/media\/[a-f0-9-]{36}$/.test(value) || /^\/static\/images\/[\w.-]+$/.test(value), '媒体必须使用 HTTPS 或内置图片路径')
 const identifier = z.string().regex(/^[a-zA-Z0-9_-]{1,80}$/)
 const step = z.object({ id: identifier, title: text, text, type: z.enum(['image', 'video']), src: media, poster: z.union([media, z.literal('')]).optional() }).strict()
 export const contentSchema = z.object({
   schemaVersion: z.literal(1),
   isDemo: z.boolean(),
+  uiText: uiTextSchema,
   studio: z.object({ name: text, subtitle: text, logo: z.union([media, z.literal('')]).optional(), intro: text, services: text,
     brandStyle: z.object({ nameFont: z.enum(Object.keys(brandFonts)).optional(), nameFontSize: z.number().min(10).max(64).optional(), logoScale: z.number().min(10).max(200).optional() }).strict().optional(),
     email: z.union([z.string().email(), z.literal('')]), phone: z.string().max(40).regex(/^[+\d\s()-]*$/),

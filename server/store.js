@@ -23,7 +23,7 @@ export async function createStore(env = process.env) {
   const dir = path.resolve(env.DATA_DIR || 'server/data'), file = path.join(dir, 'content.json')
   await mkdir(dir, { recursive: true })
   let current
-  try { current = JSON.parse(await readFile(file, 'utf8')); contentSchema.parse(current.content) }
+  try { current = JSON.parse(await readFile(file, 'utf8')); current.content = contentSchema.parse(current.content) }
   catch (error) { if (error.code !== 'ENOENT') throw error; current = { content: contentSchema.parse(demoContent), revision: 1 }; await writeFile(file, JSON.stringify(current), { mode: 0o600 }) }
   // 同一进程内串行写入，旧版本提交返回冲突。
   let queue = Promise.resolve()

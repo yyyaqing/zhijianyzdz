@@ -1,9 +1,11 @@
 // 演示内容，正式发布前替换为自己的作品与联系方式。
 import workMaterials from './work-materials.js'
+import { resolveUiText } from './ui-text.js'
 const image = (name) => `/static/images/${name}.jpg`
 export const demoContent = {
   schemaVersion: 1,
   isDemo: true,
+  uiText: resolveUiText(),
   studio: {
     name: '纸间营造', subtitle: '大曾', logo: '/static/images/zen-logo.png',
     intro: '以纸为始，向空间生长。我们关注建筑、室内与材料之间的联系，在日常观察与反复实践中，探索空间的更多可能。',

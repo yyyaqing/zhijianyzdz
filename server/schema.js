@@ -21,9 +21,10 @@ export const contentSchema = z.object({
     awards: z.array(z.object({ image: media, alt: text.default(''), display: z.enum(['logo', 'photo']).default('photo') }).strict()).max(50).default([]),
     slides: z.array(z.object({ id: identifier, image: media, alt: text }).strict()).max(20),
   }).strict(),
-  projects: z.array(z.object({ id: identifier, title: text, category: z.enum(['architecture', 'interior', 'material']), location: text.transform(value => value === '素材演示' ? '' : value), year: z.string().max(20), cover: media, ratio: z.number().min(.3).max(3), description: text.transform(value => value.replace('\n本条为 Pexels 摄影素材展示，用于预览排版，不代表工作室实际设计项目。', '')), images: z.array(media).max(80), videos: z.array(media).max(20).optional() }).strict()).max(500),
+  projects: z.array(z.object({ id: identifier, title: text, category: z.enum(['architecture', 'interior', 'material']), location: text.transform(value => value === '素材演示' ? '' : value), year: z.string().max(20), cover: media, coverType: z.enum(['image', 'video']).optional(), coverVideo: z.union([media, z.literal('')]).optional(), ratio: z.number().min(.3).max(3), description: text.transform(value => value.replace('\n本条为 Pexels 摄影素材展示，用于预览排版，不代表工作室实际设计项目。', '')), images: z.array(media).max(80), videos: z.array(media).max(20).optional() }).strict()).max(500),
   researchIntro: text,
   research: z.array(z.object({ id: identifier, code: text, title: text, cover: media, description: text, steps: z.array(step).max(100).superRefine((items, context) => { if (new Set(items.map(s => s.id)).size !== items.length) context.addIssue({ code: 'custom', message: '步骤 ID 不可重复' }) }) }).strict()).max(500),
 }).strict().superRefine((data, context) => {
+  data.projects.forEach((project, index) => { if (project.coverType === 'video' && !project.coverVideo) context.addIssue({ code: 'custom', path: ['projects', index, 'coverVideo'], message: '视频封面需要指定视频' }) })
   for (const key of ['projects', 'research']) if (new Set(data[key].map(item => item.id)).size !== data[key].length) context.addIssue({ code: 'custom', path: [key], message: 'ID 不可重复' })
 })

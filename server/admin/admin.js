@@ -42,7 +42,12 @@ function updateBrandPreview() {
   const subtitle = $('.brand-preview-subtitle'); subtitle.textContent = studio.subtitle; subtitle.style.fontSize = 9 * scale + 'px'; subtitle.style.letterSpacing = 4 * scale + 'px'; subtitle.style.paddingLeft = 4 * scale + 'px'
 }
 function media(label, path, value, video = false) {
-  return `<div class="media-field">${video ? '<div class="media-preview video-preview">MP4</div>' : `<img class="media-preview" src="${esc(value)}" alt="${esc(label)}预览">`}<div>${field(label, path, value, 'text', video ? '上传 MP4（最大 10 MB），或填写可公开播放的 HTTPS 视频地址。' : '使用 HTTPS 图片地址，或上传 JPG、PNG、WebP（最大 4 MB）。')}<input type="file" accept="${video ? 'video/mp4' : 'image/jpeg,image/png,image/webp'}" data-upload="${esc(path)}" data-video="${video}" aria-label="上传${esc(label)}"></div></div>`
+  const preview = video ? (value ? `<video class="media-preview video-preview" src="${esc(value)}" controls preload="metadata" playsinline aria-label="${esc(label)}预览"></video>` : '<div class="media-preview video-preview">待上传视频</div>') : (value ? `<img class="media-preview" src="${esc(value)}" alt="${esc(label)}预览">` : '<div class="media-preview video-preview">待上传图片</div>')
+  return `<div class="media-field ${video ? 'is-video' : ''}">${preview}<div><p class="media-title">${esc(label)}</p><label class="media-upload">${value ? '替换' : '上传'}${video ? '视频' : '图片'}<input type="file" accept="${video ? 'video/mp4' : 'image/jpeg,image/png,image/webp'}" data-upload="${esc(path)}" data-video="${video}" aria-label="上传${esc(label)}"></label><p class="hint">${video ? '支持 MP4，最大 10 MB。可在左侧播放预览。' : '支持 JPG、PNG、WebP，最大 4 MB。'}</p><details class="media-links"><summary>使用外部链接</summary>${field(video ? '视频链接' : '图片链接', path, value, 'text', '填写可公开访问的 HTTPS 地址。')}</details></div></div>`
+}
+function projectCoverEditor(item, p) {
+  const video = item.coverType === 'video'
+  return `<label>封面类型<select data-path="${p}.coverType" data-render><option value="image" ${!video ? 'selected' : ''}>图片封面</option><option value="video" ${video ? 'selected' : ''}>视频封面</option></select><p class="hint">图片封面：详情顶部显示所选图片。视频封面：列表显示预览图和播放标识，详情顶部播放指定视频。</p></label>${media(video ? '视频封面预览图' : '封面图片', `${p}.cover`, item.cover)}${video ? media('封面视频', `${p}.coverVideo`, item.coverVideo || '', true) : ''}`
 }
 function controls(path, index, length) {
   return `<div class="row-actions"><button data-move="${path}" data-index="${index}" data-delta="-1" aria-label="上移第 ${index + 1} 项" ${index === 0 ? 'disabled' : ''}>↑</button><button data-move="${path}" data-index="${index}" data-delta="1" aria-label="下移第 ${index + 1} 项" ${index === length - 1 ? 'disabled' : ''}>↓</button><button class="danger" data-remove="${path}" data-index="${index}">删除</button></div>`
@@ -70,9 +75,9 @@ function render() {
     html += `<div class="editor-section">${heading('联系二维码', '支持微信、公众号等二维码，最多 4 个。', add('studio.qrCodes', '添加二维码'))}${content.studio.qrCodes.map((s, i, a) => `<article class="panel">${heading(`二维码 ${i + 1}`, '', controls('studio.qrCodes', i, a.length))}${media('二维码图片', `studio.qrCodes.${i}.image`, s.image)}${field('显示名称', `studio.qrCodes.${i}.label`, s.label)}</article>`).join('')}</div>`
   } else if (selected !== null) {
     const item = content[section][selected], p = `${section}.${selected}`, isProject = section === 'projects'
-    html = `<button class="back" data-back>← 返回${isProject ? '作品' : '产品'}列表</button><div class="detail-top"><div><h2>${esc(item.title || '未命名内容')}</h2><p>编辑列表封面及详情页内容</p></div><small class="muted">ID · ${esc(item.id)}</small></div><div class="panel"><div class="form-grid">${field('标题', `${p}.title`, item.title)}${isProject ? `<label>作品分类<select data-path="${p}.category">${Object.entries(content.uiText.work).filter(([key]) => key in category).map(([v, t]) => `<option value="${v}" ${item.category === v ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select></label>${field('项目地点', `${p}.location`, item.location)}${field('年份', `${p}.year`, item.year)}` : field('产品编号', `${p}.code`, item.code)}</div>${media('封面图片', `${p}.cover`, item.cover)}${isProject ? field('列表图片宽高比', `${p}.ratio`, item.ratio, 'number', '宽度 ÷ 高度；可填 0.3–3，例如 1.5。') : ''}${field('详情介绍', `${p}.description`, item.description, 'textarea')}</div>`
-    if (isProject) html += heading('详情图片', '按阅读顺序排列，最多 80 张。', add(`${p}.images`, '添加图片')) + item.images.map((image, i, a) => `<article class="panel">${heading(`图片 ${i + 1}`, '', controls(`${p}.images`, i, a.length))}${media('详情图片', `${p}.images.${i}`, image)}</article>`).join('')
-    if (isProject) html += heading('作品视频', '按顺序展示在作品详情中，最多 20 个；请先上传视频或填写地址。', add(`${p}.videos`, '添加视频')) + item.videos.map((video, i, a) => `<article class="panel">${heading(`视频 ${i + 1}`, '', controls(`${p}.videos`, i, a.length))}${media('作品视频', `${p}.videos.${i}`, video, true)}</article>`).join('')
+    html = `<button class="back" data-back>← 返回${isProject ? '作品' : '产品'}列表</button><div class="detail-top"><div><h2>${esc(item.title || '未命名内容')}</h2><p>编辑列表封面及详情页内容</p></div><small class="muted">ID · ${esc(item.id)}</small></div><div class="panel"><div class="form-grid">${field('标题', `${p}.title`, item.title)}${isProject ? `<label>作品分类<select data-path="${p}.category">${Object.entries(content.uiText.work).filter(([key]) => key in category).map(([v, t]) => `<option value="${v}" ${item.category === v ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select></label>${field('项目地点', `${p}.location`, item.location)}${field('年份', `${p}.year`, item.year)}` : field('产品编号', `${p}.code`, item.code)}</div>${isProject ? projectCoverEditor(item, p) : media('封面图片', `${p}.cover`, item.cover)}${isProject ? field('列表图片宽高比', `${p}.ratio`, item.ratio, 'number', '宽度 ÷ 高度；可填 0.3–3，例如 1.5。') : ''}${field('详情介绍', `${p}.description`, item.description, 'textarea')}</div>`
+    if (isProject) html += heading('详情图片', '按阅读顺序排列，最多 80 张。', add(`${p}.images`, '添加图片')) + item.images.map((image, i, a) => `<article class="panel">${heading(`图片 ${i + 1}`, '', controls(`${p}.images`, i, a.length) + `<button data-cover-image="${i}">${item.coverType !== 'video' && item.cover === image ? '当前图片封面' : '设为图片封面'}</button>`)}${media('详情图片', `${p}.images.${i}`, image)}</article>`).join('')
+    if (isProject) html += heading('作品视频', '按顺序展示在作品详情中，最多 20 个；请先上传视频或填写地址。', add(`${p}.videos`, '添加视频')) + item.videos.map((video, i, a) => `<article class="panel">${heading(`视频 ${i + 1}`, '', controls(`${p}.videos`, i, a.length) + `<button data-cover-video="${i}" ${!video ? 'disabled' : ''}>${item.coverType === 'video' && item.coverVideo === video ? '当前视频封面' : '设为视频封面'}</button>`)}${media('作品视频', `${p}.videos.${i}`, video, true)}</article>`).join('')
     else html += heading('产品步骤', '每个步骤支持图片或 HTTPS 视频，最多 100 步。', add(`${p}.steps`, '添加步骤')) + item.steps.map((step, i, a) => `<article class="panel">${heading(`步骤 ${String(i + 1).padStart(2, '0')}`, '', controls(`${p}.steps`, i, a.length))}<div class="form-grid">${field('步骤标题', `${p}.steps.${i}.title`, step.title)}<label>媒体类型<select data-path="${p}.steps.${i}.type" data-render><option value="image" ${step.type === 'image' ? 'selected' : ''}>图片</option><option value="video" ${step.type === 'video' ? 'selected' : ''}>视频</option></select></label></div>${field('步骤说明', `${p}.steps.${i}.text`, step.text, 'textarea')}${media(step.type === 'video' ? '视频地址' : '步骤图片', `${p}.steps.${i}.src`, step.src, step.type === 'video')}${step.type === 'video' ? media('视频封面（选填）', `${p}.steps.${i}.poster`, step.poster || '') : ''}</article>`).join('')
   } else {
     const isProject = section === 'projects', items = content[section]
@@ -85,7 +90,7 @@ function render() {
 }
 async function load() {
   note(); busy = true; $('#save').disabled = true
-  try { const res = await api('/api/content'); content = await res.json(); content.uiText = resolveUiText(content.uiText); content.studio.logo ??= '/static/images/zen-logo.png'; content.studio.awards ??= []; content.studio.brandStyle = { ...brandDefaults, ...content.studio.brandStyle }; content.projects.forEach(item => { item.videos ??= [] }); etag = res.headers.get('etag'); selected = null; dirty = false; $('#revision').textContent = '内容版本 ' + etag.replaceAll('"', ''); status('已与线上内容同步'); render() } finally { busy = false; $('#save').disabled = !dirty }
+  try { const res = await api('/api/content'); content = await res.json(); content.uiText = resolveUiText(content.uiText); content.studio.logo ??= '/static/images/zen-logo.png'; content.studio.awards ??= []; content.studio.brandStyle = { ...brandDefaults, ...content.studio.brandStyle }; content.projects.forEach(item => { item.videos ??= []; item.coverType ??= 'image'; item.coverVideo ??= '' }); etag = res.headers.get('etag'); selected = null; dirty = false; $('#revision').textContent = '内容版本 ' + etag.replaceAll('"', ''); status('已与线上内容同步'); render() } finally { busy = false; $('#save').disabled = !dirty }
 }
 async function uploadAwards(input) {
   if (busy) return
@@ -112,11 +117,12 @@ $('#login-form').addEventListener('submit', async event => {
   try { await api('/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: $('#token').value }) }); $('#token').value = ''; await enter() } catch (error) { $('#login-error').textContent = error.message } finally { button.disabled = false }
 })
 $('nav').addEventListener('click', e => { const b = e.target.closest('[data-section]'); if (!b || busy) return; section = b.dataset.section; selected = null; render(); note() })
+$('#editor').addEventListener('play', event => { if (event.target.tagName === 'VIDEO') document.querySelectorAll('#editor video').forEach(video => { if (video !== event.target) video.pause() }) }, true)
 $('#editor').addEventListener('input', e => { const el = e.target; if (!el.dataset.path) return; set(el.dataset.path, el.type === 'checkbox' ? el.checked : el.type === 'number' ? Number(el.value) : el.value); changed(); updateBrandPreview() })
 $('#editor').addEventListener('change', async e => {
   const el = e.target
   if (el.dataset.awardsUpload !== undefined) { await uploadAwards(el); return }
-  if (el.dataset.path) { set(el.dataset.path, el.type === 'checkbox' ? el.checked : el.type === 'number' ? Number(el.value) : el.value); changed(); if (el.dataset.render !== undefined) render(); else if (el.closest('.media-field')) { const preview = el.closest('.media-field').querySelector('img'); if (preview) preview.src = el.value } updateBrandPreview() }
+  if (el.dataset.path) { set(el.dataset.path, el.type === 'checkbox' ? el.checked : el.type === 'number' ? Number(el.value) : el.value); changed(); if (el.dataset.render !== undefined) render(); else if (el.closest('.media-field')) { const preview = el.closest('.media-field').querySelector('img, video'); if (preview) preview.src = el.value; else render() } updateBrandPreview() }
   if (!el.dataset.upload || !el.files[0]) return
   const file = el.files[0]
   const isVideo = el.dataset.video === 'true', limit = isVideo ? 10 : 4
@@ -127,6 +133,12 @@ $('#editor').addEventListener('change', async e => {
 })
 $('#editor').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b || busy) return
+  if (b.dataset.coverImage !== undefined || b.dataset.coverVideo !== undefined) {
+    const item = content.projects[selected], video = b.dataset.coverVideo !== undefined
+    if (video) { item.coverType = 'video'; item.coverVideo = item.videos[Number(b.dataset.coverVideo)] }
+    else { item.coverType = 'image'; item.cover = item.images[Number(b.dataset.coverImage)] }
+    changed(); render(); window.scrollTo(0, 0); note('封面已选定，点击「保存并发布」后同步到小程序。'); return
+  }
   if (b.dataset.edit !== undefined) { selected = Number(b.dataset.edit); render(); window.scrollTo(0, 0) }
   if (b.dataset.back !== undefined) { selected = null; render() }
   if (b.dataset.move) { const a = get(b.dataset.move), i = Number(b.dataset.index), j = i + Number(b.dataset.delta); [a[i], a[j]] = [a[j], a[i]]; changed(); render() }
@@ -135,17 +147,19 @@ $('#editor').addEventListener('click', e => {
     const path = b.dataset.add, a = get(path), max = path === 'studio.slides' ? 20 : path === 'studio.awards' ? 50 : path === 'studio.qrCodes' ? 4 : path.endsWith('.images') ? 80 : path.endsWith('.videos') ? 20 : path.endsWith('.steps') ? 100 : 500
     if (a.length >= max) return note(`最多支持 ${max} 项。`)
     const cover = content.studio.slides[0]?.image || content.projects[0]?.cover || fallback
-    let item = path === 'studio.awards' ? { image: '', alt: '', display: a.length === 0 ? 'logo' : 'photo' } : path === 'projects' ? { id: uid(), title: '新作品', category: 'architecture', location: '', year: '', cover, ratio: 1.5, description: '', images: [], videos: [] } : path === 'research' ? { id: uid(), code: '', title: '新产品', cover, description: '', steps: [] } : path === 'studio.slides' ? { id: uid(), image: cover, alt: '' } : path === 'studio.qrCodes' ? { image: cover, label: '联系微信' } : path.endsWith('.images') ? cover : path.endsWith('.videos') ? '' : { id: uid(), title: '', text: '', type: 'image', src: cover }
+    let item = path === 'studio.awards' ? { image: '', alt: '', display: a.length === 0 ? 'logo' : 'photo' } : path === 'projects' ? { id: uid(), title: '新作品', category: 'architecture', location: '', year: '', cover, ratio: 1.5, description: '', coverType: 'image', coverVideo: '', images: [], videos: [] } : path === 'research' ? { id: uid(), code: '', title: '新产品', cover, description: '', steps: [] } : path === 'studio.slides' ? { id: uid(), image: cover, alt: '' } : path === 'studio.qrCodes' ? { image: cover, label: '联系微信' } : path.endsWith('.images') ? cover : path.endsWith('.videos') ? '' : { id: uid(), title: '', text: '', type: 'image', src: cover }
     a.push(item); if (path === 'projects' || path === 'research') selected = a.length - 1; changed(); render()
-    if (path === 'studio.awards') { const input = document.querySelector(`[data-path="studio.awards.${a.length - 1}.image"]`); input?.closest('.panel').scrollIntoView({ block: 'center', behavior: 'smooth' }); input?.focus({ preventScroll: true }) }
+    if (path === 'studio.awards') { const input = document.querySelector(`[data-upload="studio.awards.${a.length - 1}.image"]`); input?.closest('.panel').scrollIntoView({ block: 'center', behavior: 'smooth' }); input?.focus({ preventScroll: true }) }
   }
 })
 $('#save').addEventListener('click', async () => {
   if (busy || !dirty) return
   const invalid = Array.from($('#editor').querySelectorAll('input[type="number"]')).find(input => !input.value || !input.reportValidity())
   if (invalid) { invalid.focus(); return note('请填写有效的数值，范围见输入框下方说明。') }
+  const missingCover = content.projects.findIndex(item => item.coverType === 'video' && !item.coverVideo?.trim())
+  if (missingCover !== -1) { section = 'projects'; selected = missingCover; render(); document.querySelector(`[data-upload="projects.${missingCover}.coverVideo"]`)?.focus(); return note('请上传封面视频、填写 HTTPS 视频地址，或在作品视频中点击「设为视频封面」。') }
   const missingAward = content.studio.awards.findIndex(award => !award.image.trim())
-  if (missingAward !== -1) { section = 'awards'; selected = null; render(); document.querySelector(`[data-path="studio.awards.${missingAward}.image"]`)?.focus(); return note(`请先为奖项图片 ${missingAward + 1} 上传图片或填写 HTTPS 地址；不需要的空项可以删除。`) }
+  if (missingAward !== -1) { section = 'awards'; selected = null; render(); document.querySelector(`[data-upload="studio.awards.${missingAward}.image"]`)?.focus(); return note(`请先为奖项图片 ${missingAward + 1} 上传图片或填写 HTTPS 地址；不需要的空项可以删除。`) }
   busy = true; $('#save').disabled = true; $('#editor').setAttribute('aria-busy', 'true'); status('正在发布…'); note()
   try { const res = await api('/api/content', { method: 'PUT', headers: { 'Content-Type': 'application/json', 'If-Match': etag }, body: JSON.stringify(content) }); etag = res.headers.get('etag'); dirty = false; $('#revision').textContent = '内容版本 ' + etag.replaceAll('"', ''); status('已发布 · ' + new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })) } catch (error) { note(error.message + '\n当前修改仍保留；若内容已被他人更新，请先备份当前修改，再点击重新读取。'); changed() } finally { busy = false; $('#save').disabled = !dirty; $('#editor').removeAttribute('aria-busy') }
 })

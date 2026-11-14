@@ -1,3 +1,4 @@
+import { homeCarouselSettings } from './home-carousel.js'
 import { workCarouselSettings } from './work-carousel.js'
 import { videoLinkKind, channelActivityFor } from './video-links.js'
 import { brandDefaults, brandFonts, brandSettings } from './brand.js'
@@ -80,7 +81,7 @@ function render() {
     html += `<div class="editor-section">${field('栏目标题', 'uiText.studio.awards', content.uiText.studio.awards)}<label>批量上传奖项图片<input type="file" accept="image/jpeg,image/png,image/webp" multiple data-awards-upload aria-label="批量上传奖项图片"><p class="hint">可一次选择多张 JPG、PNG、WebP，每张不超过 4 MB。上传后点击「保存并发布」。</p></label></div>`
     html += content.studio.awards.length ? content.studio.awards.map((award, i, a) => `<article class="panel">${heading(`奖项图片 ${i + 1}`, '', controls('studio.awards', i, a.length))}<label>展示方式<select data-path="studio.awards.${i}.display"><option value="logo" ${award.display === 'logo' ? 'selected' : ''}>Logo · 居中展示</option><option value="photo" ${award.display !== 'logo' ? 'selected' : ''}>照片 · 按原比例铺满内容宽度</option></select></label>${media('奖项图片', `studio.awards.${i}.image`, award.image)}${field('图片说明（选填）', `studio.awards.${i}.alt`, award.alt)}</article>`).join('') : '<div class="empty">还没有奖项图片，点击「新增奖项图片」逐张添加，或在上方批量上传。</div>'
   } else if (section === 'slides') {
-    html = heading('首页轮播', '按显示顺序排列，最多 20 张。', add('studio.slides', '添加轮播')) + content.studio.slides.map((s, i, a) => `<article class="panel">${heading(`轮播 ${String(i + 1).padStart(2, '0')}`, '', controls('studio.slides', i, a.length))}${media('轮播图片', `studio.slides.${i}.image`, s.image)}${field('图片说明', `studio.slides.${i}.alt`, s.alt)}</article>`).join('')
+    html = heading('首页轮播', '按显示顺序排列，最多 20 张。', add('studio.slides', '添加轮播')) + `<div class="editor-section"><div class="form-grid"><label class="toggle-field"><input type="checkbox" data-path="homeCarousel.autoplay" ${content.homeCarousel.autoplay ? 'checked' : ''}>自动轮播（默认开启）</label>${field('切换间隔（秒）', 'homeCarousel.intervalSeconds', content.homeCarousel.intervalSeconds, 'number', '默认每 3 秒切换下一张，可设置 1–60 秒；与 Work 轮播独立。', { min: 1, max: 60, step: 1 })}</div></div>` + content.studio.slides.map((s, i, a) => `<article class="panel">${heading(`轮播 ${String(i + 1).padStart(2, '0')}`, '', controls('studio.slides', i, a.length))}${media('轮播图片', `studio.slides.${i}.image`, s.image)}${field('图片说明', `studio.slides.${i}.alt`, s.alt)}</article>`).join('')
     html += `<div class="editor-section">${heading('联系二维码', '支持微信、公众号等二维码，最多 4 个。', add('studio.qrCodes', '添加二维码'))}${content.studio.qrCodes.map((s, i, a) => `<article class="panel">${heading(`二维码 ${i + 1}`, '', controls('studio.qrCodes', i, a.length))}${media('二维码图片', `studio.qrCodes.${i}.image`, s.image)}${field('显示名称', `studio.qrCodes.${i}.label`, s.label)}</article>`).join('')}</div>`
   } else if (selected !== null) {
     const item = content[section][selected], p = `${section}.${selected}`, isProject = section === 'projects'
@@ -100,7 +101,7 @@ function render() {
 }
 async function load() {
   note(); busy = true; $('#save').disabled = true
-  try { const res = await api('/api/content'); content = await res.json(); content.uiText = resolveUiText(content.uiText); content.workCarousel = workCarouselSettings(content.workCarousel); content.studio.logo ??= '/static/images/zen-logo.png'; content.studio.awards ??= []; content.studio.brandStyle = { ...brandDefaults, ...content.studio.brandStyle }; content.projects.forEach(item => { item.videos ??= []; item.coverType ??= 'image'; item.coverVideo ??= '' }); etag = res.headers.get('etag'); selected = null; dirty = false; $('#revision').textContent = '内容版本 ' + etag.replaceAll('"', ''); status('已与线上内容同步'); render() } finally { busy = false; $('#save').disabled = !dirty }
+  try { const res = await api('/api/content'); content = await res.json(); content.uiText = resolveUiText(content.uiText); content.workCarousel = workCarouselSettings(content.workCarousel); content.homeCarousel = homeCarouselSettings(content.homeCarousel); content.studio.logo ??= '/static/images/zen-logo.png'; content.studio.awards ??= []; content.studio.brandStyle = { ...brandDefaults, ...content.studio.brandStyle }; content.projects.forEach(item => { item.videos ??= []; item.coverType ??= 'image'; item.coverVideo ??= '' }); etag = res.headers.get('etag'); selected = null; dirty = false; $('#revision').textContent = '内容版本 ' + etag.replaceAll('"', ''); status('已与线上内容同步'); render() } finally { busy = false; $('#save').disabled = !dirty }
 }
 async function uploadAwards(input) {
   if (busy) return

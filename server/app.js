@@ -17,6 +17,7 @@ export function createApp(store, { adminToken = '', allowedOrigin = '', secureCo
   auth.install(app)
   app.get('/admin/brand.js', (req, res) => res.sendFile(fileURLToPath(new URL('../src/data/brand.js', import.meta.url))))
   app.get('/admin/video-links.js', (req, res) => res.sendFile(fileURLToPath(new URL('../src/data/video-links.js', import.meta.url))))
+  app.get('/admin/work-carousel.js', (req, res) => res.sendFile(fileURLToPath(new URL('../src/data/work-carousel.js', import.meta.url))))
   app.get('/admin/ui-text.js', (req, res) => res.sendFile(fileURLToPath(new URL('../src/data/ui-text.js', import.meta.url))))
   app.use('/admin', express.static(fileURLToPath(new URL('./admin', import.meta.url)), { maxAge: 0 }))
   app.get('/', (req, res) => res.redirect('/admin/'))

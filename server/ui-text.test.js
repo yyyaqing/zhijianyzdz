@@ -46,7 +46,7 @@ test('界面文字：旧数据补齐、全部字段发布与重启持久化，�
   assert.equal(saved.revision, 10)
   assert.deepEqual(saved.content.uiText, changed.uiText)
   delete saved.content.uiText
-  assert.deepEqual(saved.content, legacy)
+  assert.deepEqual(saved.content, { ...legacy, workCarousel: { autoplay: true, intervalSeconds: 3 } })
   const module = await fetch(base + '/admin/ui-text.js')
   assert.equal(module.status, 200)
   assert.match(module.headers.get('content-type'), /javascript/)

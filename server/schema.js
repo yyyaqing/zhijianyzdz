@@ -14,6 +14,7 @@ export const contentSchema = z.object({
   schemaVersion: z.literal(1),
   isDemo: z.boolean(),
   uiText: uiTextSchema,
+  workCarousel: z.object({ autoplay: z.boolean().default(true), intervalSeconds: z.number().int().min(1).max(60).default(3) }).strict().default({}),
   studio: z.object({ name: text, subtitle: text, logo: z.union([media, z.literal('')]).optional(), intro: text, services: text,
     brandStyle: z.object({ nameFont: z.enum(Object.keys(brandFonts)).optional(), nameFontSize: z.number().min(10).max(64).optional(), logoScale: z.number().min(10).max(200).optional() }).strict().optional(),
     email: z.union([z.string().email(), z.literal('')]), phone: z.string().max(40).regex(/^[+\d\s()-]*$/),

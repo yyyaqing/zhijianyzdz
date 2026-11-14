@@ -1,3 +1,4 @@
+import { workCarouselSettings } from './work-carousel.js'
 import { videoLinkKind, channelActivityFor } from './video-links.js'
 import { brandDefaults, brandFonts, brandSettings } from './brand.js'
 import { uiTextGroups, resolveUiText } from './ui-text.js'
@@ -89,6 +90,7 @@ function render() {
     else html += heading('产品步骤', '每个步骤支持图片或 HTTPS 视频，最多 100 步。', add(`${p}.steps`, '添加步骤')) + item.steps.map((step, i, a) => `<article class="panel">${heading(`步骤 ${String(i + 1).padStart(2, '0')}`, '', controls(`${p}.steps`, i, a.length))}<div class="form-grid">${field('步骤标题', `${p}.steps.${i}.title`, step.title)}<label>媒体类型<select data-path="${p}.steps.${i}.type" data-render><option value="image" ${step.type === 'image' ? 'selected' : ''}>图片</option><option value="video" ${step.type === 'video' ? 'selected' : ''}>视频</option></select></label></div>${field('步骤说明', `${p}.steps.${i}.text`, step.text, 'textarea')}${media(step.type === 'video' ? '视频地址' : '步骤图片', `${p}.steps.${i}.src`, step.src, step.type === 'video')}${step.type === 'video' ? media('视频封面（选填）', `${p}.steps.${i}.poster`, step.poster || '') : ''}</article>`).join('')
   } else {
     const isProject = section === 'projects', items = content[section]
+    if (isProject) html += `<div class="editor-section">${heading('Work · 分类作品轮播', '用于建筑、室内、材料等分类中的左右切换；All 保持作品列表。')}<div class="form-grid"><label class="toggle-field"><input type="checkbox" data-path="workCarousel.autoplay" ${content.workCarousel.autoplay ? 'checked' : ''}>自动轮播（默认开启）</label>${field('切换间隔（秒）', 'workCarousel.intervalSeconds', content.workCarousel.intervalSeconds, 'number', '默认每 3 秒切换下一作品，可设置 1–60 秒。', { min: 1, max: 60, step: 1 })}</div></div>`
     if (!isProject) html += field('Product 页面介绍', 'researchIntro', content.researchIntro, 'textarea')
     html += heading(isProject ? '作品列表' : '产品列表', `共 ${items.length} 项 · 点击编辑维护详情，使用箭头调整前端顺序。`, add(section, isProject ? '新建作品' : '新建产品'))
     html += items.length ? `<div class="item-list">${items.map((item, i) => `<article class="list-row"><span class="row-number">${String(i + 1).padStart(2, '0')}</span><img class="cover" src="${esc(item.cover)}" alt="${esc(item.title)}封面"><div class="row-info"><strong>${esc(item.title || '未命名内容')}</strong><small>${esc(isProject ? [content.uiText.work[item.category], item.location, item.year].filter(Boolean).join(' / ') : item.code)} · ${isProject ? item.images.length + ' 张详情图片' : item.steps.length + ' 个步骤'}</small></div><div class="list-actions"><button data-edit="${i}">编辑详情 ↗</button>${controls(section, i, items.length)}</div></article>`).join('')}</div>` : '<div class="empty">还没有内容，点击右上方新建。</div>'
@@ -98,7 +100,7 @@ function render() {
 }
 async function load() {
   note(); busy = true; $('#save').disabled = true
-  try { const res = await api('/api/content'); content = await res.json(); content.uiText = resolveUiText(content.uiText); content.studio.logo ??= '/static/images/zen-logo.png'; content.studio.awards ??= []; content.studio.brandStyle = { ...brandDefaults, ...content.studio.brandStyle }; content.projects.forEach(item => { item.videos ??= []; item.coverType ??= 'image'; item.coverVideo ??= '' }); etag = res.headers.get('etag'); selected = null; dirty = false; $('#revision').textContent = '内容版本 ' + etag.replaceAll('"', ''); status('已与线上内容同步'); render() } finally { busy = false; $('#save').disabled = !dirty }
+  try { const res = await api('/api/content'); content = await res.json(); content.uiText = resolveUiText(content.uiText); content.workCarousel = workCarouselSettings(content.workCarousel); content.studio.logo ??= '/static/images/zen-logo.png'; content.studio.awards ??= []; content.studio.brandStyle = { ...brandDefaults, ...content.studio.brandStyle }; content.projects.forEach(item => { item.videos ??= []; item.coverType ??= 'image'; item.coverVideo ??= '' }); etag = res.headers.get('etag'); selected = null; dirty = false; $('#revision').textContent = '内容版本 ' + etag.replaceAll('"', ''); status('已与线上内容同步'); render() } finally { busy = false; $('#save').disabled = !dirty }
 }
 async function uploadAwards(input) {
   if (busy) return

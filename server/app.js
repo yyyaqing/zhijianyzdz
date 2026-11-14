@@ -7,12 +7,16 @@ import { contentSchema } from './schema.js'
 export function createApp(store, { adminToken = '', allowedOrigin = '', secureCookies = process.env.NODE_ENV === 'production' } = {}) {
   const app = express()
   app.disable('x-powered-by')
-  app.use(helmet())
+  app.use(helmet({ contentSecurityPolicy: { directives: {
+    imgSrc: ["'self'", 'data:', 'https:'],
+    mediaSrc: ["'self'", 'https:', 'blob:'],
+  } } }))
   app.use((req, res, next) => { if (allowedOrigin && req.headers.origin === allowedOrigin) { res.setHeader('Access-Control-Allow-Origin', allowedOrigin); res.setHeader('Vary', 'Origin'); res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type, If-Match'); res.setHeader('Access-Control-Allow-Methods', 'GET, PUT, OPTIONS'); res.setHeader('Access-Control-Expose-Headers', 'ETag') } if (req.method === 'OPTIONS') return res.sendStatus(204); next() })
   const auth = adminAuth(adminToken, secureCookies)
   app.use(express.json({ limit: '2mb' }))
   auth.install(app)
   app.get('/admin/brand.js', (req, res) => res.sendFile(fileURLToPath(new URL('../src/data/brand.js', import.meta.url))))
+  app.get('/admin/video-links.js', (req, res) => res.sendFile(fileURLToPath(new URL('../src/data/video-links.js', import.meta.url))))
   app.get('/admin/ui-text.js', (req, res) => res.sendFile(fileURLToPath(new URL('../src/data/ui-text.js', import.meta.url))))
   app.use('/admin', express.static(fileURLToPath(new URL('./admin', import.meta.url)), { maxAge: 0 }))
   app.get('/', (req, res) => res.redirect('/admin/'))

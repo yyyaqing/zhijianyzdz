@@ -24,6 +24,12 @@ export const uiTextGroups = [
   { key: 'status', label: '加载、媒体与连接提示', fields: [
     ['retry', '连接重试按钮', '重试'], ['reload', '重新加载按钮', '重新加载'], ['imageFailed', '图片加载失败', '图片暂未加载'],
     ['videoFailed', '视频播放失败', '视频暂时无法播放，请检查网络或视频地址后重试'], ['replay', '重新播放按钮', '重新播放'],
+    ['channelVideo', '视频号链接标题', '视频号视频'], ['externalVideo', '外部视频链接标题', '视频链接'],
+    ['watchChannel', '打开视频号按钮', '前往视频号观看'], ['copyVideoLink', '复制视频链接按钮', '复制观看链接'],
+    ['channelLinkHint', '视频号短链提示', '复制链接后，可发到微信聊天中打开观看'],
+    ['externalLinkHint', '外部视频链接提示', '此视频需在原平台观看，可复制链接打开'],
+    ['copiedVideoLink', '视频链接已复制提示', '链接已复制，可发到微信聊天中打开'],
+    ['copyLinkFailed', '复制视频链接失败提示', '复制失败，请稍后重试'], ['openChannelFailed', '视频号打开失败提示', '暂时无法打开视频号，可复制链接观看'],
     ['loadFailed', '内容请求失败', '内容暂时无法加载'], ['connectionFailed', '连接失败', '无法连接工作室，请稍后重试'],
     ['cloudUnsupported', '微信版本不支持', '当前微信版本不支持云托管，请更新微信'], ['invalidContent', '内容格式异常', '内容格式有误，请联系工作室'],
   ] },

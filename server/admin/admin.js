@@ -1,3 +1,4 @@
+import { videoLinkKind, channelActivityFor } from './video-links.js'
 import { brandDefaults, brandFonts, brandSettings } from './brand.js'
 import { uiTextGroups, resolveUiText } from './ui-text.js'
 const $ = selector => document.querySelector(selector)
@@ -41,9 +42,16 @@ function updateBrandPreview() {
   name.style.letterSpacing = 3 * scale + 'px'; name.style.paddingLeft = 3 * scale + 'px'
   const subtitle = $('.brand-preview-subtitle'); subtitle.textContent = studio.subtitle; subtitle.style.fontSize = 9 * scale + 'px'; subtitle.style.letterSpacing = 4 * scale + 'px'; subtitle.style.paddingLeft = 4 * scale + 'px'
 }
+function channelEditor(path, value) {
+  const match = /^projects\.(\d+)\./.exec(path)
+  if (!match || videoLinkKind(value) !== 'channels') return ''
+  const activity = content.projects[Number(match[1])].channelActivities?.find(item => item.url === value) || {}
+  return `<details class="media-links"><summary>视频号原生跳转设置（选填）</summary><p class="hint">仅填写分享短链时，小程序提供复制观看链接。补充以下两项后可直接打开视频号。视频号 ID 从视频号助手获取；feedId 为该条视频的 ID，不是分享短链后缀。</p>${['finderUserName', 'feedId'].map(key => `<label>${key === 'finderUserName' ? '视频号 ID（sph 开头）' : '视频 feedId'}<input data-channel-for="${esc(path)}" data-channel-field="${key}" value="${esc(activity[key] || '')}"></label>`).join('')}</details>`
+}
 function media(label, path, value, video = false) {
-  const preview = video ? (value ? `<video class="media-preview video-preview" src="${esc(value)}" controls preload="metadata" playsinline aria-label="${esc(label)}预览"></video>` : '<div class="media-preview video-preview">待上传视频</div>') : (value ? `<img class="media-preview" src="${esc(value)}" alt="${esc(label)}预览">` : '<div class="media-preview video-preview">待上传图片</div>')
-  return `<div class="media-field ${video ? 'is-video' : ''}">${preview}<div><p class="media-title">${esc(label)}</p><label class="media-upload">${value ? '替换' : '上传'}${video ? '视频' : '图片'}<input type="file" accept="${video ? 'video/mp4' : 'image/jpeg,image/png,image/webp'}" data-upload="${esc(path)}" data-video="${video}" aria-label="上传${esc(label)}"></label><p class="hint">${video ? '支持 MP4，最大 10 MB。可在左侧播放预览。' : '支持 JPG、PNG、WebP，最大 4 MB。'}</p><details class="media-links"><summary>使用外部链接</summary>${field(video ? '视频链接' : '图片链接', path, value, 'text', '填写可公开访问的 HTTPS 地址。')}</details></div></div>`
+  const kind = video ? videoLinkKind(value) : 'direct'
+  const preview = video ? (value ? (kind === 'direct' ? `<video class="media-preview video-preview" src="${esc(value)}" controls preload="metadata" playsinline aria-label="${esc(label)}预览"></video>` : `<div class="media-preview video-preview share-preview"><strong>${kind === 'channels' ? '视频号分享链接' : '视频平台分享链接'}</strong><p>请前往原平台观看</p><a href="${esc(value)}" target="_blank" rel="noopener noreferrer">打开链接 ↗</a></div>`) : '<div class="media-preview video-preview">待上传视频</div>') : (value ? `<img class="media-preview" src="${esc(value)}" alt="${esc(label)}预览">` : '<div class="media-preview video-preview">待上传图片</div>')
+  return `<div class="media-field ${video ? 'is-video' : ''}">${preview}<div><p class="media-title">${esc(label)}</p><label class="media-upload">${value ? '替换' : '上传'}${video ? '视频' : '图片'}<input type="file" accept="${video ? 'video/mp4' : 'image/jpeg,image/png,image/webp'}" data-upload="${esc(path)}" data-video="${video}" aria-label="上传${esc(label)}"></label><p class="hint">${video ? '支持 MP4，最大 10 MB；HTTPS 视频直链可在左侧播放。视频号等分享页以观看链接展示。' : '支持 JPG、PNG、WebP，最大 4 MB。'}</p><details class="media-links"><summary>${video ? '粘贴在线视频地址' : '粘贴在线图片地址'}</summary>${field(video ? '视频链接' : '图片链接', path, value, 'text', video ? '可填写 HTTPS 视频直链或视频号分享链接；分享页不会在播放器内播放。' : '填写可公开访问、无需登录的 HTTPS 图片地址。')}<button type="button" data-preview-link="${esc(path)}">预览链接</button></details>${video ? channelEditor(path, value) : ''}</div></div>`
 }
 function projectCoverEditor(item, p) {
   const video = item.coverType === 'video'
@@ -118,11 +126,11 @@ $('#login-form').addEventListener('submit', async event => {
 })
 $('nav').addEventListener('click', e => { const b = e.target.closest('[data-section]'); if (!b || busy) return; section = b.dataset.section; selected = null; render(); note() })
 $('#editor').addEventListener('play', event => { if (event.target.tagName === 'VIDEO') document.querySelectorAll('#editor video').forEach(video => { if (video !== event.target) video.pause() }) }, true)
-$('#editor').addEventListener('input', e => { const el = e.target; if (!el.dataset.path) return; set(el.dataset.path, el.type === 'checkbox' ? el.checked : el.type === 'number' ? Number(el.value) : el.value); changed(); updateBrandPreview() })
+$('#editor').addEventListener('input', e => { const el = e.target; if (el.dataset.channelFor) { const project = content.projects[Number(el.dataset.channelFor.split('.')[1])], url = get(el.dataset.channelFor); project.channelActivities ??= []; let entry = project.channelActivities.find(item => item.url === url); if (!entry) { entry = { url, finderUserName: '', feedId: '' }; project.channelActivities.push(entry) } entry[el.dataset.channelField] = el.value.trim(); project.channelActivities = project.channelActivities.filter(item => item.finderUserName || item.feedId); changed(); return } if (!el.dataset.path) return; set(el.dataset.path, el.type === 'checkbox' ? el.checked : el.type === 'number' ? Number(el.value) : el.value); changed(); updateBrandPreview() })
 $('#editor').addEventListener('change', async e => {
   const el = e.target
   if (el.dataset.awardsUpload !== undefined) { await uploadAwards(el); return }
-  if (el.dataset.path) { set(el.dataset.path, el.type === 'checkbox' ? el.checked : el.type === 'number' ? Number(el.value) : el.value); changed(); if (el.dataset.render !== undefined) render(); else if (el.closest('.media-field')) { const preview = el.closest('.media-field').querySelector('img, video'); if (preview) preview.src = el.value; else render() } updateBrandPreview() }
+  if (el.dataset.path) { if (el.closest('.media-field') && el.type === 'text') el.value = el.value.trim(); set(el.dataset.path, el.type === 'checkbox' ? el.checked : el.type === 'number' ? Number(el.value) : el.value); changed(); if (el.dataset.render !== undefined) render(); else if (el.closest('.media-field') && el.closest('.media-field').classList.contains('is-video')) render(); else if (el.closest('.media-field')) { const preview = el.closest('.media-field').querySelector('img, video'); if (preview) preview.src = el.value; else render() } updateBrandPreview() }
   if (!el.dataset.upload || !el.files[0]) return
   const file = el.files[0]
   const isVideo = el.dataset.video === 'true', limit = isVideo ? 10 : 4
@@ -133,6 +141,7 @@ $('#editor').addEventListener('change', async e => {
 })
 $('#editor').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b || busy) return
+  if (b.dataset.previewLink) { const value = get(b.dataset.previewLink); if (!/^https:\/\/[^\s]+$/.test(value) && !/^\/(?:api\/media|static\/images)\//.test(value)) return note('请粘贴可公开访问、无需登录的 HTTPS 图片或视频地址。'); render(); note('链接预览已更新，点击「保存并发布」后同步到小程序。'); return }
   if (b.dataset.coverImage !== undefined || b.dataset.coverVideo !== undefined) {
     const item = content.projects[selected], video = b.dataset.coverVideo !== undefined
     if (video) { item.coverType = 'video'; item.coverVideo = item.videos[Number(b.dataset.coverVideo)] }
@@ -158,6 +167,8 @@ $('#save').addEventListener('click', async () => {
   if (invalid) { invalid.focus(); return note('请填写有效的数值，范围见输入框下方说明。') }
   const missingCover = content.projects.findIndex(item => item.coverType === 'video' && !item.coverVideo?.trim())
   if (missingCover !== -1) { section = 'projects'; selected = missingCover; render(); document.querySelector(`[data-upload="projects.${missingCover}.coverVideo"]`)?.focus(); return note('请上传封面视频、填写 HTTPS 视频地址，或在作品视频中点击「设为视频封面」。') }
+  const missingChannel = content.projects.findIndex(item => item.channelActivities?.some(entry => !channelActivityFor(item, entry.url)))
+  if (missingChannel !== -1) { section = 'projects'; selected = missingChannel; render(); return note('视频号原生跳转需要同时填写有效的视频号 ID 和 feedId；留空两项则仅保留分享链接。') }
   const missingAward = content.studio.awards.findIndex(award => !award.image.trim())
   if (missingAward !== -1) { section = 'awards'; selected = null; render(); document.querySelector(`[data-upload="studio.awards.${missingAward}.image"]`)?.focus(); return note(`请先为奖项图片 ${missingAward + 1} 上传图片或填写 HTTPS 地址；不需要的空项可以删除。`) }
   busy = true; $('#save').disabled = true; $('#editor').setAttribute('aria-busy', 'true'); status('正在发布…'); note()

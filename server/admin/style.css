@@ -12,3 +12,6 @@
 
 .media-title{font-weight:500;margin:0 0 10px}.media-upload{margin-bottom:6px}.media-links{margin-top:12px;color:var(--muted);font-size:12px}.media-links summary{cursor:pointer;min-height:32px;display:flex;align-items:center}.media-links summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}.media-links[open] summary{margin-bottom:8px}.media-links input{font-size:12px}.media-field.is-video{grid-template-columns:minmax(220px,40%) 1fr}.is-video .video-preview{width:100%;height:auto;min-height:150px;aspect-ratio:16/9;background:#161616;color:#ccc;object-fit:contain;letter-spacing:normal}.section-heading:has([data-cover-image]),.section-heading:has([data-cover-video]){flex-wrap:wrap}
 @media(max-width:640px){.media-field.is-video{grid-template-columns:1fr}.is-video .video-preview{max-height:260px}}
+
+.share-preview { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; text-align: center; gap: 12px; background: #f0efeb; color: #333; }
+.share-preview a { text-decoration: underline; color: inherit; }
